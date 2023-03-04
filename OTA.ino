@@ -1,5 +1,4 @@
 void OTA() {
-  
   if (WiFi.status() != WL_CONNECTED)
     return;
 
@@ -17,8 +16,7 @@ void OTA() {
   }
   addLog(LOG_LEVEL_INFO, "OTA  : Connected to server");
   query = "id=" + String(chipMAC) + "&ver=" + String(version) + "&";
-  String url = "http://" + String(server) + "/ota/?" + query;
-  addLog(LOG_LEVEL_INFO, "OTA  : url:" + url);
+  String url = "http://" + String(server) + "/api/ota/?" + query;
   otaclient.println("GET " + url + " HTTP/1.1");
   otaclient.println("Host: " + String(server));
   otaclient.println("Connection: close");
@@ -63,7 +61,7 @@ void OTA() {
       }
     }
   }
-  if ( otaEnabled ) {
+
   // check if there is enough space to store the image
   if (! Update.begin(contentLength)) {
     addLog(LOG_LEVEL_ERROR, "OTA  : Not enough space to store image");
@@ -85,6 +83,5 @@ void OTA() {
     } else {
       addLog(LOG_LEVEL_ERROR, "OTA  : Update not finished. What went wrong?");
     }
-  }
   }
 }

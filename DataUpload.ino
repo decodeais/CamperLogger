@@ -1,3 +1,96 @@
+
+// JPS Uploading GPS Data
+void uploadInfluxGPS() {
+
+  if (!Settings.upload_influx) {
+    return;
+  }
+  if (GPS_present) {
+    if (Settings.influx_write_geohash) {
+      // strings must be quoted
+      addLog(LOG_LEVEL_INFO, "DATA : Writing geohash to influxdb");
+      influx_post("Geohash", "\"" + String(readings.GPS_geohash) + "\"", "geo");
+    }
+    if (Settings.influx_write_coords) {
+      addLog(LOG_LEVEL_INFO, "DATA : Writing GPS coordinates to influxdb");
+      //   influx_post("lat", String(readings.GPS_lat_abs));
+      //   influx_post("lon", String(readings.GPS_lon_abs));
+    }
+    if (Settings.influx_write_speed_heading) {
+      addLog(LOG_LEVEL_INFO, "DATA : Writing GPS speed & heading to influxdb");
+      //  influx_post("speed", String(readings.GPS_speed));
+      //  influx_post("heading", String(readings.GPS_heading));
+    }
+  }
+}
+
+void uploadInfluxReadings() {
+  //Serial.print("MPpv:   ");
+  if (!Settings.upload_influx) {
+    return;
+  }
+
+  sensor.clearFields();
+
+  addLog(LOG_LEVEL_INFO, "DATA : Writing data to influxdb");
+
+  // this is where the readings are being written to influxdb.
+  // You can add or remove any readings below. For MPPT and BMV readings,
+  // check readings.MPPT_ok and readings.BMV_B1_ok respectively to make
+  // you are not pushing corrupted data into influxdb. If you are writing
+  // readings.BMV_LDD, check readings.BMV_B2_ok (this reading is in the
+  // second block of the BMV output).
+
+  if (readings.MPPT_ok && Settings.influx_write_mppt) {
+    sensor.addField("MPpv", readings.MPPT_Ppv);
+    Serial.println(readings.MPPT_Ppv);
+    sensor.addField("MVpv", readings.MPPT_Vpv);
+    sensor.addField("MIb", readings.MPPT_Ibatt);
+    sensor.addField("MVb", readings.MPPT_Vbatt);
+    sensor.addField("Mstate", readings.MPPT_state);
+    sensor.addField("Merror", readings.MPPT_err);
+    sensor.addField("Mpmax", readings.MPPT_Pmax);
+    sensor.addField("Myday", readings.MPPT_yday);
+    sensor.addField("Mytot", readings.MPPT_ytot);
+  }
+  // load status and load current are not available on all MPPT's, values should
+  // only be written to influxdb if they are present.
+  if (readings.MPPT_ok && Settings.influx_write_mppt && readings.MPPT_has_load) {
+    sensor.addField("MIload", readings.MPPT_Iload);
+    sensor.addField("Mload", readings.MPPT_load_on);
+  }
+  if (readings.BMV_B1_ok && Settings.influx_write_bmv) {
+    //influx_post("BVbatt", String(readings.BMV_Vbatt));
+    //influx_post("BVaux",   String(readings.BMV_Vaux));
+    //influx_post("BPbatt", String(readings.BMV_Pbatt));
+    //influx_post("BIbatt", String(readings.BMV_Ibatt));
+    //influx_post("BSOC",   String(readings.BMV_SOC));
+    //influx_post("BTTG",   String(readings.BMV_TTG));
+    //influx_post("CHG",    String(readings.Charger));
+  }
+  if (readings.BMV_B2_ok && Settings.influx_write_bmv) {
+    //influx_post("BLDD",   String(readings.BMV_LDD));
+  }
+
+  if (Settings.influx_write_water) {
+    //influx_post("Tank", String(readings.Water_level));
+  }
+
+  if (Settings.influx_write_gas) {
+    //influx_post("Gas", String(readings.Gas_level));
+  }
+
+  if (Settings.influx_write_temp) {
+    for (int i = 0; i < 10; i++) {
+      if (readings.temp[i] != -127) {
+        //jps     influx_post("Temp" + String(i), String(readings.temp[i]));
+      }
+    }
+  }
+}
+
+
+//JPS Whats that???
 void uploadGetData() {
   if (inventory_requested && inventory_complete) {
     addLog(LOG_LEVEL_DEBUG, "DATA : Uploading inventory: " + inventory);
@@ -9,24 +102,56 @@ void uploadGetData() {
   if (!Settings.upload_get) {
     return;
   }
+  //********************jps
 
   addLog(LOG_LEVEL_INFO, "DATA : Uploading readings to server");
 
+
+  // jps uploading Temperature sensors
   String request = "";
   for (int i = 0; i < 10; i++) {
     if (readings.temp[i] != -127) {
       request += "&T" + String(i) + "=" + String(readings.temp[i]);
     }
   }
+  // jps uploading Tank sensors
+  request += "&Tnk=" + String(readings.Water_level);
+  request += "&Gas=" + String(readings.Gas_level);
 
+  if (readings.BMV_B1_ok) {
+    // These readings are in the first block of the BMV output
+    request += "&Ub=" + String(readings.BMV_Vbatt);
+    request += "&Um=" + String(readings.BMV_Vaux);
+    request += "&Ib=" + String(readings.BMV_Ibatt);
+    request += "&Pb=" + String(readings.BMV_Pbatt);
+    request += "&SOC=" + String(readings.BMV_SOC);
+    request += "&TTG=" + String(readings.BMV_TTG);
+    request += "&CHG=" + String(readings.Charger);
+  }
+  if (readings.BMV_B2_ok) {
+    // this reading is in the second block of the BMV output
+    request += "&LDD=" + String(readings.BMV_LDD);
+  }
+
+  if (readings.MPPT_ok) {
+    request += "&MUb=" + String(readings.MPPT_Vbatt);
+    request += "&MIb=" + String(readings.MPPT_Ibatt);
+    request += "&MUpv=" + String(readings.MPPT_Vpv);
+    request += "&MPpv=" + String(readings.MPPT_Ppv);
+    request += "&Mstate=" + String(readings.MPPT_state);
+    request += "&Merr=" + String(readings.MPPT_err);
+    request += "&MYtot=" + String(readings.MPPT_ytot);
+    request += "&MYt=" + String(readings.MPPT_yday);
+    request += "&MPmxt=" + String(readings.MPPT_Pmax);
+  }
   if (GPS_present) {
-    request += "&GPSdate="     + String(readings.GPS_date);
-    request += "&GPStime="     + String(readings.GPS_time);
-    request += "&GPSlat="      + String(readings.GPS_lat);
-    request += "&GPSlon="      + String(readings.GPS_lon);
-    request += "&GPSspeed="    + String(readings.GPS_speed);
-    request += "&GPSheading="  + String(readings.GPS_heading);
-    request += "&GPSfix="      + String(readings.GPS_fix);
+    request += "&GPSdate=" + String(readings.GPS_date);
+    request += "&GPStime=" + String(readings.GPS_time);
+    request += "&GPSlat=" + String(readings.GPS_lat);
+    request += "&GPSlon=" + String(readings.GPS_lon);
+    request += "&GPSspeed=" + String(readings.GPS_speed);
+    request += "&GPSheading=" + String(readings.GPS_heading);
+    request += "&GPSfix=" + String(readings.GPS_fix);
     request += "&GPS_geohash=" + String(readings.GPS_geohash);
   }
   String response;
