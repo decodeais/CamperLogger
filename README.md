@@ -9,18 +9,15 @@ host (like a Raspberry Pi) if you don't. The logger itself does not store any da
 ## Features
 
 - Read GPS coordinates, speed, heading and time
-- Read battery status using a Victron BMV battery monitor
 - Read solar statistics from a Victron MPPT charge regulator
 - Measure temperatures using Dallas 1-Wire sensors
-- Measure the level in your fresh water tank (using a resistive sensor)
-- Measure the level in your gas (propane) tank (using a resistive sensor)
-- Switch stuff on/off using relays (I use it to switch my 24V to 12V battery charger)
+- Arduino OTA via IDE
 - Over the air software updates (OTA)
 - Periodically upload this info to the server
 - Data upload is done over https
-- Supports logging directly to influxdb (including https support)
+- Supports logging directly to influxdb2.0 (including https support)
 - Configurable via webinterface
 - Output of all measurements in JSON via http for local displaying
 
-If you are interested in the hardware design and/or the PCB, send me a message.
+
 
