@@ -5,22 +5,14 @@ void readVEdirect(int device) {
   bool block_end = 0;
   bool in_block  = 0;
   String devicename;
-  if(device == DEVICE_BMV_B1) {
-    devicename = "BMV (block 1)";
-  }
-  if(device == DEVICE_BMV_B2) {
-    devicename = "BMV (block 2)";
-  }
+  
   if(device == DEVICE_MPPT) {
     devicename = "MPPT";
   }
   unsigned long vedirect_timeout = millis() + 4000L;
   // We get a block every second. However, a BMV sends different odd and even blocks.
   // This means it may take a little over two seconds to get to the block we want.
-  if(device == DEVICE_BMV_B1 || device == DEVICE_BMV_B2) {
-    vedirect_timeout += 2000L;
-  }
-
+  
   while (!block_end && !timeOutReached(vedirect_timeout)) {
     vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
     while (SerialVE.available() > 0 && !timeOutReached(vedirect_timeout)) {
@@ -30,7 +22,7 @@ void readVEdirect(int device) {
       if (character == '\n') {
         digitalWrite(PIN_EXT_LED, HIGH);
         // line received. Not sure if it is complete yet
-        if (line.startsWith("PID") || (device == DEVICE_BMV_B2 && line.startsWith("H1\t"))) {  // second part of BMV block starts with H1
+        if (line.startsWith("PID") ) {  // second part of BMV block starts with H1
           in_block = 1;
         }
         if (!in_block) {
@@ -44,9 +36,7 @@ void readVEdirect(int device) {
           if (device == DEVICE_MPPT) {
             parseMPPT(line);
           }
-          if (device == DEVICE_BMV_B1 || device == DEVICE_BMV_B2) {
-            parseBMV(line);
-          }
+          
 
           // checksum validation
           if (line.startsWith("Checksum")) {
@@ -60,18 +50,7 @@ void readVEdirect(int device) {
                 readings.MPPT_ok = 1;
                 addLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
               }
-              if (device == DEVICE_BMV_B1) {
-                lastBlockBMV_1 = thisBlock;
-                BMV_present = 1;
-                readings.BMV_B1_ok = 1;
-                addLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
-              }
-              if (device == DEVICE_BMV_B2) {
-                lastBlockBMV_2 = thisBlock;
-                BMV_present = 1;
-                readings.BMV_B2_ok = 1;
-                addLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
-              }
+              
               return;
             } else {
               if (device == DEVICE_MPPT) {
@@ -79,16 +58,7 @@ void readVEdirect(int device) {
                 addLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
                 lastBlockMPPT = thisBlock + "Invalid checksum BMV block 1";
               }
-              if (device == DEVICE_BMV_B1) {
-                readings.BMV_B1_ok = 0;
-                addLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
-                lastBlockBMV_1 = thisBlock + "Invalid checksum BMV block 1";
-              }
-              if (device == DEVICE_BMV_B2) {
-                readings.BMV_B2_ok = 0;
-                addLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
-                lastBlockBMV_2 = thisBlock + "Invalid checksum BMV block 2";
-              }
+              
             }
           }
         }
@@ -184,53 +154,6 @@ void parseMPPT(String line) {
     readings.MPPT_load_on = 1;
   }
 
-}
-
-void parseBMV(String line) {
-  // BMV battery voltage
-  if (line.startsWith("V\t")) {
-    readings.BMV_Vbatt = line.substring(2).toFloat() / 1000;
-  }
-
-  // BMV auxilary battery voltage
-  if (line.startsWith("VS\t") || line.startsWith("VM\t")) {
-    readings.BMV_Vaux = line.substring(3).toFloat() / 1000;
-  }
-
-  // BMV State Of Charge
-  if (line.startsWith("SOC\t")) {
-    readings.BMV_SOC = line.substring(4).toFloat() / 10;
-  }
-
-  // BMV battery current
-  if (line.startsWith("I\t")) {
-    readings.BMV_Ibatt = line.substring(2).toFloat() / 1000;
-  }
-
-  // BMV Time To Go
-  if (line.startsWith("TTG\t")) {
-    readings.BMV_TTG = line.substring(4).toFloat();
-  }
-
-  // BMV Last Discharge Depth
-  if (line.startsWith("H2\t")) {
-    readings.BMV_LDD = line.substring(3).toFloat() / 1000;
-  }
-
-  // BMV battery power
-  if (line.startsWith("P\t")) {
-    readings.BMV_Pbatt = line.substring(2).toFloat();
-  }
-
-  // BMV Product ID
-  if (line.startsWith("PID\t")) {
-    readings.BMV_PID = line.substring(4);
-  }
-
-  // BMV serial number
-  if (line.startsWith("SER#\t")) {
-    readings.BMV_serial = line.substring(5);
-  }
 }
 
 String getVictronDeviceByPID(String PID) {

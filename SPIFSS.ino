@@ -2,9 +2,8 @@
   SPIFFS error handling
   Look here for error # reference: https://github.com/pellepl/spiffs/blob/master/src/spiffs.h
   \*********************************************************************************************/
-#define SPIFFS_CHECK(result, fname) \
-  if (!(result)) { return (FileError(__LINE__, fname)); }
-String FileError(int line, const char* fname) {
+#define SPIFFS_CHECK(result, fname) if (!(result)) { return(FileError(__LINE__, fname)); }
+String FileError(int line, const char * fname) {
   String err("FS   : Error while reading/writing ");
   err = err + fname;
   err = err + " in ";
@@ -47,13 +46,15 @@ void ResetFactory(void) {
   LoadSettings();
   strcpy_P(SecuritySettings.WifiSSID, PSTR(""));
   strcpy_P(SecuritySettings.WifiKey, PSTR(""));
+  strcpy_P(SecuritySettings.WifiSSID2, PSTR(""));
+  strcpy_P(SecuritySettings.WifiKey2, PSTR(""));
   strcpy_P(SecuritySettings.WifiAPKey, PSTR(""));
   SecuritySettings.Password[0] = 0;
   SaveSettings();
   delay(1000);
-  WiFi.persistent(true);   // use SDK storage of SSID/WPA parameters
-  WiFi.disconnect();       // this will store empty ssid/wpa into sdk storage
-  WiFi.persistent(false);  // Do not use SDK storage of SSID/WPA parameters
+  WiFi.persistent(true); // use SDK storage of SSID/WPA parameters
+  WiFi.disconnect(); // this will store empty ssid/wpa into sdk storage
+  WiFi.persistent(false); // Do not use SDK storage of SSID/WPA parameters
   ESP.restart();
 }
 
@@ -89,48 +90,28 @@ String LoadSettings() {
   addLog(LOG_LEVEL_INFO, "FILE : Loading settings");
   String error;
   error = LoadFromFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(struct SettingsStruct));
-  if (Settings.config_file_version == 4 && CONFIG_FILE_VERSION == 5) {
-    // upgrade config file version 4 to version 5
+  if(Settings.config_file_version == 4 && CONFIG_FILE_VERSION == 5) {
     addLog(LOG_LEVEL_INFO, "FILE : Config file upgrade 4->5");
-    Settings.influx_write_gas = 1;
-    Settings.config_file_version = 5;
+    Settings.config_file_version         = 5;
     settings_changed = 1;
   }
   if (error.length() != 0 || Settings.config_file_version != CONFIG_FILE_VERSION) {
     addLog(LOG_LEVEL_INFO, "FS   : Overwriting settings file");
-    Settings.config_file_version = CONFIG_FILE_VERSION;
-    Settings.DST = 0;
-    Settings.upload_get = 1;
-    strncpy(Settings.upload_get_host, "bus.tarthorst.net", 64);
-    Settings.upload_get_port = 443;
-    Settings.upload_get_ssl = 1;
-    Settings.upload_influx = 0;
-    /*jps  commented for search    
-    strncpy(Settings.influx_host, "", 64);
-    Settings.influx_port                 = 8086;
-    Settings.influx_ssl                  = 0;
-    strncpy(Settings.influx_db, "", 16);
-    strncpy(Settings.influx_mn, "", 16);          // the name of the measurement
-    strncpy(Settings.influx_user, "", 16);
-    strncpy(Settings.influx_pass, "", 32);
-//**************************************************** jps   
-*/
-    Settings.influx_write_bmv = 1;
-    Settings.influx_write_mppt = 1;
-    Settings.influx_write_temp = 1;
-    Settings.influx_write_water = 1;
-    Settings.influx_write_geohash = 1;
-    Settings.influx_write_coords = 1;
-    Settings.influx_write_speed_heading = 1;
-    Settings.gps_upload_interval = 60;       // seconds
-    Settings.readings_upload_interval = 60;  // seconds
+    Settings.config_file_version         = CONFIG_FILE_VERSION;
+    Settings.DST                         = 0;
+    Settings.upload_get                  = 1;
+    strncpy(Settings.upload_get_host, "camper-logger.footage.one", 64); // "http://192.168.40.187:7070/log"
+    Settings.upload_get_port             = 80;
+    Settings.upload_get_ssl              = 1;
+    Settings.gps_upload_interval         = 60;               // seconds
+    Settings.readings_upload_interval    = 60;               // seconds
     SaveSettings();
   }
   if (error.length() > 0) {
     error += "\n";
   }
   error += (LoadFromFile((char*)FILE_SECURITY, 0, (byte*)&SecuritySettings, sizeof(struct SecurityStruct)));
-  if (settings_changed) {
+  if(settings_changed) {
     SaveSettings();
   }
   return (error);
@@ -144,8 +125,9 @@ String SaveToFile(char* fname, int index, byte* memAddress, int datasize) {
   SPIFFS_CHECK(f, fname);
 
   SPIFFS_CHECK(f.seek(index, fs::SeekSet), fname);
-  byte* pointerToByteToSave = memAddress;
-  for (int x = 0; x < datasize; x++) {
+  byte *pointerToByteToSave = memAddress;
+  for (int x = 0; x < datasize ; x++)
+  {
     SPIFFS_CHECK(f.write(*pointerToByteToSave), fname);
     pointerToByteToSave++;
   }
@@ -161,7 +143,8 @@ String SaveToFile(char* fname, int index, byte* memAddress, int datasize) {
 /********************************************************************************************\
   Load data from config file on SPIFFS
   \*********************************************************************************************/
-String LoadFromFile(char* fname, int index, byte* memAddress, int datasize) {
+String LoadFromFile(char* fname, int index, byte* memAddress, int datasize)
+{
   //  addLog(LOG_LEVEL_INFO, String(F("FILE : Expected Load size ")) + datasize);
 
   fs::File f = SPIFFS.open(fname, "r+");
@@ -170,19 +153,20 @@ String LoadFromFile(char* fname, int index, byte* memAddress, int datasize) {
   //  addLog(LOG_LEVEL_INFO, String(F("FILE : Actual file size ")) + f.size());
 
   SPIFFS_CHECK(f.seek(index, fs::SeekSet), fname);
-  byte* pointerToByteToRead = memAddress;
-  for (int x = 0; x < datasize; x++) {
+  byte *pointerToByteToRead = memAddress;
+  for (int x = 0; x < datasize; x++)
+  {
     int readres = f.read();
     SPIFFS_CHECK(readres >= 0, fname);
     *pointerToByteToRead = readres;
-    pointerToByteToRead++;  // next byte
+    pointerToByteToRead++;// next byte
   }
   f.close();
 
   return (String());
 }
 
-void writeFile(fs::FS& fs, const char* path, String message) {
+void writeFile(fs::FS &fs, const char * path, String message) {
   File file = fs.open(path, FILE_WRITE);
   if (!file) {
     // SPIFFS is potentially open, do not write to it.
@@ -198,7 +182,7 @@ String InitFile(const char* fname, int datasize) {
   fs::File f = SPIFFS.open(fname, "w");
   SPIFFS_CHECK(f, fname);
 
-  for (int x = 0; x < datasize; x++) {
+  for (int x = 0; x < datasize ; x++) {
     SPIFFS_CHECK(f.write(0), fname);
   }
   f.close();
