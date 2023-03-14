@@ -1,8 +1,52 @@
+
+
+#include "LoggerWebClient.h"
+#include <Arduino.h>
+void reportResetReason();
+void callHome();
+String getVarFromString(String var, String cfgData);
+String urlOpen(String path, String query);
+String httpGet(String path, String query, int) ;
+String httpsGet(String path, String query, int);
+void uploadFile(String content, String type);
+void sendDataToLogServer();
+
+
+
+
+
+
+
+extern SettingsStruct Settings ;
+extern float version;
+extern bool inventory_requested;
+extern uint32_t sysTime;
+extern byte logLevel;
+extern char chipMAC[12];
+
+//extern String query; 
+extern readingsStruct readings;
+
+void formatIP_STR2(const IPAddress& ip, char (&strIP)[20]) 
+{
+  sprintf_P(strIP, PSTR("%u.%u.%u.%u"), ip[0], ip[1], ip[2], ip[3]);
+}
+
+String formatIP2(const IPAddress& ip)
+ {
+  char strIP[20];
+  formatIP_STR2(ip, strIP);
+  return String(strIP);
+}
+
+
+
+
 void reportResetReason() {
   if (Settings.upload_get_ssl) {
-   httpsGet("/api/reboot/", "&ver=" + String(version,3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
+    httpsGet("/api/reboot/", "&ver=" + String(version, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
   } else {
-   httpGet("/api/reboot/", "&ver=" + String(version,3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
+    httpGet("/api/reboot/", "&ver=" + String(version, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
   }
 }
 
@@ -14,9 +58,10 @@ void callHome() {
   addLog(LOG_LEVEL_INFO, "WEBCL: Calling home");
   String cfgData;
   if (Settings.upload_get_ssl) {
-    cfgData = httpsGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(system_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP(WiFi.localIP()), Settings.upload_get_port);
+    cfgData = httpsGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(esp_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP2(WiFi.localIP()), Settings.upload_get_port);
+
   } else {
-    cfgData = httpGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(system_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP(WiFi.localIP()), Settings.upload_get_port);
+    cfgData = httpGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(esp_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP2(WiFi.localIP()), Settings.upload_get_port);
   }
   String returnValue;
   bool settingsChanged = 0;
@@ -70,7 +115,7 @@ void callHome() {
       addLog(LOG_LEVEL_INFO, "OTA  : No software available from server");
       return;
     }
-    addLog(LOG_LEVEL_DEBUG, "OTA  : SW version available on server: " + String(srvVer,3));
+    addLog(LOG_LEVEL_DEBUG, "OTA  : SW version available on server: " + String(srvVer, 3));
     if (version == srvVer) {
       addLog(LOG_LEVEL_INFO, "OTA  : SW version up to date");
     }
@@ -108,22 +153,23 @@ String getVarFromString(String var, String cfgData) {
 
 String urlOpen(String path, String query) {
   if (path.startsWith("https://")) {
-    return (httpsGet(path, query));
+    return (httpsGet(path, query,443));
   } else if (path.startsWith("http://")) {
     return (httpGet(path, query));
   } else {
     addLog(LOG_LEVEL_ERROR, "WEBCL: Unsupported URL: " + path);
+    return ("");
   }
 }
 
 String httpsGet(String path, String query, int port) {
   if (WiFi.status() != WL_CONNECTED) {
     addLog(LOG_LEVEL_ERROR, "WEBCL: Not trying to connect: Not connected to WiFi");
-    return("");
+    return ("");
   }
   WiFiClientSecure webclient;
   webclient.setTimeout(3);
-  addLog(LOG_LEVEL_DEBUG, "WEBCL: Starting https request (" + path + ")" );
+  addLog(LOG_LEVEL_DEBUG, "WEBCL: Starting https request (" + path + ")");
   unsigned int contentLength = 0;
   unsigned int contentPos = 0;
   String response = "";
@@ -172,11 +218,11 @@ String httpsGet(String path, String query, int port) {
 String httpGet(String path, String query, int port) {
   if (WiFi.status() != WL_CONNECTED) {
     addLog(LOG_LEVEL_ERROR, "WEBCL: Not trying to connect: Not connected to WiFi");
-    return("");
+    return ("");
   }
   WiFiClient webclient;
   webclient.setTimeout(3);
-  addLog(LOG_LEVEL_DEBUG, "WEBCL: Starting https request (" + path + ")" );
+  addLog(LOG_LEVEL_DEBUG, "WEBCL: Starting https request (" + path + ")");
   unsigned int contentLength = 0;
   unsigned int contentPos = 0;
   String response = "";
@@ -242,47 +288,47 @@ void uploadFile(String content, String type) {
   }
 }
 
-void sendDataToLogServer(){
+void sendDataToLogServer() {
 
-    WiFiClient wifiClient;
-    HTTPClient http;
+  WiFiClient wifiClient;
+  HTTPClient http;
 
-    addLog(LOG_LEVEL_INFO, "DATA : Uploading readings to server");
-    String serverUrl = "http://" + String(Settings.upload_get_host) + ":" + String(Settings.upload_get_port) + "/log";
-    if (http.begin(wifiClient, serverUrl)) {  // HTTP "http://192.168.40.187:7070/log"
+  addLog(LOG_LEVEL_INFO, "DATA : Uploading readings to server");
+  String serverUrl = "http://" + String(Settings.upload_get_host) + ":" + String(Settings.upload_get_port) + "/log";
+  if (http.begin(wifiClient, serverUrl)) {  // HTTP "http://192.168.40.187:7070/log"
 
-      http.addHeader("Content-Type", "application/json");
-      String body;
-      body = "{\"from\":\"" + String(now());
-      body += "\",\"dop\":\"" + readings.GPS_dop;
-      body += "\",\"sat\":\"" + readings.GPS_sat;
-      body += "\",\"lat\":\"" + readings.GPS_lat;
-      body += "\",\"lon\":\"" + readings.GPS_lon;
-      body += "\",\"alt\":\"" + readings.GPS_alt;
-      body += "\",\"time\":\"" + readings.GPS_time;
-      body += "\",\"date\":\"" + readings.GPS_date;
-      body += "\",\"hash\":\"" + readings.GPS_geohash;
-      body += "\"}";
+    http.addHeader("Content-Type", "application/json");
+    String body;
+    body = "{\"from\":\"" + String(now());
+    body += "\",\"dop\":\"" + readings.GPS_dop;
+    body += "\",\"sat\":\"" + readings.GPS_sat;
+    body += "\",\"lat\":\"" + readings.GPS_lat;
+    body += "\",\"lon\":\"" + readings.GPS_lon;
+    body += "\",\"alt\":\"" + readings.GPS_alt;
+    body += "\",\"time\":\"" + readings.GPS_time;
+    body += "\",\"date\":\"" + readings.GPS_date;
+    body += "\",\"hash\":\"" + readings.GPS_geohash;
+    body += "\"}";
 
-      String message = "DATA : Uploading readings to server:" + serverUrl;
+    String message = "DATA : Uploading readings to server:" + serverUrl;
+    addLog(LOG_LEVEL_INFO, message);
+
+    int httpCode = http.POST(body);
+    // httpCode will be negative on error
+    if (httpCode > 0) {
+      String message = "DATA : Uploading readings to server response:" + String(httpCode);
       addLog(LOG_LEVEL_INFO, message);
-
-      int httpCode = http.POST(body);
-      // httpCode will be negative on error
-      if (httpCode > 0) {
-        String message = "DATA : Uploading readings to server response:" + String(httpCode);
-        addLog(LOG_LEVEL_INFO, message);
-        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
-          String payload = http.getString();
-          Serial.println(payload);
-        }
-      } else {
-        String message = "DATA : Uploading readings to server response:" + http.errorToString(httpCode);
-        addLog(LOG_LEVEL_INFO, message);
+      if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+        String payload = http.getString();
+        Serial.println(payload);
       }
-
-      http.end();
     } else {
-        addLog(LOG_LEVEL_INFO, "DATA : unable to connect");
+      String message = "DATA : Uploading readings to server response:" + http.errorToString(httpCode);
+      addLog(LOG_LEVEL_INFO, message);
     }
+
+    http.end();
+  } else {
+    addLog(LOG_LEVEL_INFO, "DATA : unable to connect");
+  }
 }

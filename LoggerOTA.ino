@@ -1,3 +1,13 @@
+
+#include "LoggerOTA.h"
+
+extern char chipMAC[12];
+extern float version;
+extern bool otaEnabled;
+extern SettingsStruct Settings;
+
+
+
 void OTA() {
   
   if (WiFi.status() != WL_CONNECTED)

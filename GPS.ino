@@ -1,3 +1,21 @@
+
+#include "GPS.h"
+
+#include <Update.h>
+#include "defs.h"
+#include <TinyGPSPlus.h>
+#include "LoggerMisc.h"
+#include <Arduino.h>
+
+
+extern readingsStruct readings;
+extern HardwareSerial SerialGPS;
+extern TinyGPSPlus gpsParser;
+extern bool GPS_present;
+//void readGPS();
+
+
+
 void readGPS() {
   unsigned long timeout = millis() + 4000L;
   while (timeout > millis()) {
@@ -15,7 +33,7 @@ void readGPS() {
       readings.GPS_alt = gpsParser.altitude.meters();
       readings.GPS_sat = gpsParser.satellites.value();
       readings.GPS_dop = String(gpsParser.hdop.value(),5);
-      readings.GPS_geohash = geohash(gpsParser.location.lat(), gpsParser.location.lng());
+      readings.GPS_geohash = Loggergeohash(gpsParser.location.lat(), gpsParser.location.lng());
 
       // printRawGPSData();
       return;
@@ -27,7 +45,7 @@ void readGPS() {
 
 }
 
-String geohash (float lat, float lng) {
+String Loggergeohash (float lat, float lng) {
   // I borrowed this code from Dennis Geurts (github.com/dennisg). Thanks, Dennis.
 
   char base32[] = "0123456789bcdefghjkmnpqrstuvwxyz";

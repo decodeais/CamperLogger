@@ -1,3 +1,12 @@
+#include "LoggerSPIFSS.h"
+
+
+//#include <FS.h>
+
+
+extern SecurityStruct SecuritySettings;
+extern SettingsStruct Settings;
+
 /********************************************************************************************\
   SPIFFS error handling
   Look here for error # reference: https://github.com/pellepl/spiffs/blob/master/src/spiffs.h
@@ -75,11 +84,11 @@ String readFile(String filename) {
   \*********************************************************************************************/
 String SaveSettings(void) {
   String err;
-  err = SaveToFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(struct SettingsStruct));
+  err = SaveToFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(SettingsStruct));
   if (err.length())
     return (err);
 
-  return (SaveToFile((char*)FILE_SECURITY, 0, (byte*)&SecuritySettings, sizeof(struct SecurityStruct)));
+  return (SaveToFile((char*)FILE_SECURITY, 0, (byte*)&SecuritySettings, sizeof(SecurityStruct)));
 }
 
 /********************************************************************************************\
@@ -89,7 +98,7 @@ String LoadSettings() {
   int settings_changed = 0;
   addLog(LOG_LEVEL_INFO, "FILE : Loading settings");
   String error;
-  error = LoadFromFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(struct SettingsStruct));
+  error = LoadFromFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(SettingsStruct));
   if(Settings.config_file_version == 4 && CONFIG_FILE_VERSION == 5) {
     addLog(LOG_LEVEL_INFO, "FILE : Config file upgrade 4->5");
     Settings.config_file_version         = 5;
@@ -110,7 +119,7 @@ String LoadSettings() {
   if (error.length() > 0) {
     error += "\n";
   }
-  error += (LoadFromFile((char*)FILE_SECURITY, 0, (byte*)&SecuritySettings, sizeof(struct SecurityStruct)));
+  error += (LoadFromFile((char*)FILE_SECURITY, 0, (byte*)&SecuritySettings, sizeof(SecurityStruct)));
   if(settings_changed) {
     SaveSettings();
   }
