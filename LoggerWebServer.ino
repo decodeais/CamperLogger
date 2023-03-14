@@ -1,23 +1,34 @@
+#include "LoggerWebserver.h"
+
+extern WebServer Webserver;
+extern SecurityStruct SecuritySettings;
+extern SettingsStruct Settings;
+extern bool MPPT_present;
+extern String lastBlockMPPT;
+extern SettingsStruct settings;
+extern readingsStruct readings;
+extern unsigned long timerAPoff;
+
 String html_head = "<html><head><title>Camper Control</title><style>body {font-family: verdana;background-color: white; color: black;font-size: 40px;}td,th{font-size: 40px;text-align:left;}input[type=checkbox]{padding:2px;transform:scale(3);}input[type=password],select,input[type=submit],input[type=text],input[type=number]{-webkit-appearance: none;-moz-appearance: none; display: block;margin: 0;width: 100%;height: 56px;line-height: 40px;font-size: 40px;border: 1px solid #bbb;}a, a.vsited {font-size: 15px;text-decoration: none;color: #ffffff;background-color: #005ca9;padding: 10px;display: inline-block;border: 1px solid black;border-radius: 10px;text-transform: uppercase;font-weight: bold;}pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size: 17px;}</style><meta name='apple-mobile-web-app-capable' content='yes'><meta name='viewport' content='user-scalable=no, initial-scale=.5 width=device-width'><meta charset='UTF-8'></head><body><p><a href='/'>Home</a><a href='/wifi'>WiFi config</a><a href='/cfg'>Settings</a><a href='/mppt'>MPPT</a><a href='/sensors'>Sensors</a><hr>";
 
 void WebServerInit() {
   addLog(LOG_LEVEL_INFO, F("WEB  : Server initializing"));
 
   // Prepare webserver pages
-  WebServer.on("/", handle_root);
-  WebServer.on("/mppt", handle_mppt);
-  WebServer.on("/sensors", handle_sensors);
-  WebServer.on("/wifi", handle_wificonfig);
-  WebServer.on("/savewifi", handle_savewificonfig);
-  WebServer.on("/cfg", handle_cfg);
-  WebServer.on("/savecfg", handle_savecfg);
-  WebServer.on("/json", handle_json);
-  WebServer.on("/reset", ResetFactory);
-  WebServer.on("/ota", OTA);
+  Webserver.on("/", handle_root);
+  Webserver.on("/mppt", handle_mppt);
+  Webserver.on("/sensors", handle_sensors);
+  Webserver.on("/wifi", handle_wificonfig);
+  Webserver.on("/savewifi", handle_savewificonfig);
+  Webserver.on("/cfg", handle_cfg);
+  Webserver.on("/savecfg", handle_savecfg);
+  Webserver.on("/json", handle_json);
+  Webserver.on("/reset", ResetFactory);
+  Webserver.on("/ota", OTA);
 
-  WebServer.onNotFound(handle_notfound);
+  Webserver.onNotFound(handle_notfound);
 
-  WebServer.begin();
+  Webserver.begin();
 }
 
 void handle_wificonfig() {
@@ -55,19 +66,19 @@ void handle_wificonfig() {
     content += "</form>";
     content += "</body></html>\n";
   }
-  WebServer.send(200, "text/html", content);
+  Webserver.send(200, "text/html", content);
 }
 
 void handle_savewificonfig() {
-  for (int i = 0; i < WebServer.args(); i++) {
-    if (WebServer.argName(i) == "ssid")
-      WebServer.arg(i).toCharArray(SecuritySettings.WifiSSID, 32);
-    if (WebServer.argName(i) == "pw")
-      WebServer.arg(i).toCharArray(SecuritySettings.WifiKey, 64);
-    if (WebServer.argName(i) == "ssid2")
-      WebServer.arg(i).toCharArray(SecuritySettings.WifiSSID2, 32);
-    if (WebServer.argName(i) == "pw2")
-      WebServer.arg(i).toCharArray(SecuritySettings.WifiKey2, 64);
+  for (int i = 0; i < Webserver.args(); i++) {
+    if (Webserver.argName(i) == "ssid")
+      Webserver.arg(i).toCharArray(SecuritySettings.WifiSSID, 32);
+    if (Webserver.argName(i) == "pw")
+      Webserver.arg(i).toCharArray(SecuritySettings.WifiKey, 64);
+    if (Webserver.argName(i) == "ssid2")
+      Webserver.arg(i).toCharArray(SecuritySettings.WifiSSID2, 32);
+    if (Webserver.argName(i) == "pw2")
+      Webserver.arg(i).toCharArray(SecuritySettings.WifiKey2, 64);
   }
   addLog(LOG_LEVEL_DEBUG, "WEB  : Config request: SSID: " + String(SecuritySettings.WifiSSID) + " Key: " + String(SecuritySettings.WifiKey));
   addLog(LOG_LEVEL_INFO, "WEB  : Saving settings... " + SaveSettings());
@@ -76,8 +87,23 @@ void handle_savewificonfig() {
   if (wifi_ok) {
     timerAPoff = millis() + 10000L;
   }
-  WebServer.sendContent("HTTP/1.1 302\r\nLocation: /\r\n");
+  Webserver.sendContent("HTTP/1.1 302\r\nLocation: /\r\n");
 }
+
+void formatIP_STR3(const IPAddress& ip, char (&strIP)[20]) 
+{
+  sprintf_P(strIP, PSTR("%u.%u.%u.%u"), ip[0], ip[1], ip[2], ip[3]);
+}
+
+String formatIP3(const IPAddress& ip)
+ {
+  char strIP[20];
+  formatIP_STR3(ip, strIP);
+  return String(strIP);
+}
+
+
+
 
 void handle_root() {
   statusLED(true);
@@ -86,15 +112,15 @@ void handle_root() {
     String content;
     content = html_head;
     content += "Connected to WiFi.<br>IP adres: ";
-    content += formatIP(WiFi.localIP());
+    content += formatIP3(WiFi.localIP());
     content += "<br>Time: ";
     content += formattedTime();
-    WebServer.send(200, "text/html", content);
+    Webserver.send(200, "text/html", content);
     if (timerAPoff != 0)
       timerAPoff = millis() + 10000L;
   } else {
     addLog(LOG_LEVEL_INFO, "WEB  : Not connected to WiFi, redirecting to config page");
-    WebServer.sendContent("HTTP/1.1 302\r\nLocation: /wifi\r\n");
+    Webserver.sendContent("HTTP/1.1 302\r\nLocation: /wifi\r\n");
   }
   statusLED(false);
 }
@@ -111,7 +137,7 @@ void handle_mppt() {
   } else {
     content += "No MPPT present";
   }
-  WebServer.send(200, "text/html", content);
+  Webserver.send(200, "text/html", content);
   if (timerAPoff != 0)
     timerAPoff = millis() + 10000L;
   statusLED(false);
@@ -142,7 +168,7 @@ void handle_sensors() {
   content += "geohash:" + String(readings.GPS_geohash) + "<br>";
   content += "<br>";
 
-  WebServer.send(200, "text/html", content);
+  Webserver.send(200, "text/html", content);
   if (timerAPoff != 0)
     timerAPoff = millis() + 10000L;
   statusLED(false);
@@ -229,7 +255,7 @@ content += " name=\"idb_gps\" value=\"1\"></td></tr>";
 
   content += "<tr><td colspan=\"2\"><input type=\"submit\" value=\"Save settings\"></td></tr>";
   content += "</table></form></html>";
-  WebServer.send(200, "text/html", content);
+  Webserver.send(200, "text/html", content);
   if (timerAPoff != 0)
     timerAPoff = millis() + 10000L;
   statusLED(false);
@@ -247,69 +273,69 @@ void handle_savecfg() {
   Settings.influx_write_coords = 0;
   Settings.influx_write_speed_heading = 0;
 
-  for (int i = 0; i < WebServer.args(); i++) {
-    if (WebServer.argName(i) == "get_enabled" && WebServer.arg(i) == "1") {
+  for (int i = 0; i < Webserver.args(); i++) {
+    if (Webserver.argName(i) == "get_enabled" && Webserver.arg(i) == "1") {
       Settings.upload_get = 1;
     }
-    if (WebServer.argName(i) == "idb_ssl" && WebServer.arg(i) == "1") {
+    if (Webserver.argName(i) == "idb_ssl" && Webserver.arg(i) == "1") {
       Settings.influx_ssl = 1;
     }
-    if (WebServer.argName(i) == "idb_enabled" && WebServer.arg(i) == "1") {
+    if (Webserver.argName(i) == "idb_enabled" && Webserver.arg(i) == "1") {
       Settings.upload_influx = 1;
     }
-    if (WebServer.argName(i) == "idb_mppt" && WebServer.arg(i) == "1") {
+    if (Webserver.argName(i) == "idb_mppt" && Webserver.arg(i) == "1") {
       Settings.influx_write_mppt = 1;
     }
-    if (WebServer.argName(i) == "idb_gps" && WebServer.arg(i) == "1") {
+    if (Webserver.argName(i) == "idb_gps" && Webserver.arg(i) == "1") {
       Settings.influx_write_gps = 1;
     }
-      if (WebServer.argName(i) == "idb_temp" && WebServer.arg(i) == "1") {
+      if (Webserver.argName(i) == "idb_temp" && Webserver.arg(i) == "1") {
         Settings.influx_write_temp = 1;
       }
-      if (WebServer.argName(i) == "idb_geohash" && WebServer.arg(i) == "1") {
+      if (Webserver.argName(i) == "idb_geohash" && Webserver.arg(i) == "1") {
         Settings.influx_write_geohash = 1;
       }
-      if (WebServer.argName(i) == "idb_coords" && WebServer.arg(i) == "1") {
+      if (Webserver.argName(i) == "idb_coords" && Webserver.arg(i) == "1") {
         Settings.influx_write_coords = 1;
       }
-      if (WebServer.argName(i) == "idb_speed" && WebServer.arg(i) == "1") {
+      if (Webserver.argName(i) == "idb_speed" && Webserver.arg(i) == "1") {
         Settings.influx_write_speed_heading = 1;
       }
-      if (WebServer.argName(i) == "get_ssl" && WebServer.arg(i) == "1") {
+      if (Webserver.argName(i) == "get_ssl" && Webserver.arg(i) == "1") {
         Settings.upload_get_ssl = 1;
       }
-      if (WebServer.argName(i) == "idb_host") {
-        WebServer.arg(i).toCharArray(Settings.influx_host, 96);
+      if (Webserver.argName(i) == "idb_host") {
+        Webserver.arg(i).toCharArray(Settings.influx_host, 96);
       }
-      if (WebServer.argName(i) == "idb_token") {
-        WebServer.arg(i).toCharArray(Settings.influx_token, 100);
+      if (Webserver.argName(i) == "idb_token") {
+        Webserver.arg(i).toCharArray(Settings.influx_token, 100);
       }
-      if (WebServer.argName(i) == "idb_org") {
-        WebServer.arg(i).toCharArray(Settings.influx_org, 20);
+      if (Webserver.argName(i) == "idb_org") {
+        Webserver.arg(i).toCharArray(Settings.influx_org, 20);
       }
-      if (WebServer.argName(i) == "idb_bucket") {
-        WebServer.arg(i).toCharArray(Settings.influx_bucket, 20);
+      if (Webserver.argName(i) == "idb_bucket") {
+        Webserver.arg(i).toCharArray(Settings.influx_bucket, 20);
       }
-      if (WebServer.argName(i) == "get_host") {
-        WebServer.arg(i).toCharArray(Settings.upload_get_host, 32);
+      if (Webserver.argName(i) == "get_host") {
+        Webserver.arg(i).toCharArray(Settings.upload_get_host, 32);
       }
-      if (WebServer.argName(i) == "idb_port") {
-        Settings.influx_port = WebServer.arg(i).toInt();
+      if (Webserver.argName(i) == "idb_port") {
+        Settings.influx_port = Webserver.arg(i).toInt();
       }
-      if (WebServer.argName(i) == "get_port") {
-        Settings.upload_get_port = WebServer.arg(i).toInt();
+      if (Webserver.argName(i) == "get_port") {
+        Settings.upload_get_port = Webserver.arg(i).toInt();
       }
-      if (WebServer.argName(i) == "gps_interval") {
-        Settings.gps_upload_interval = WebServer.arg(i).toInt();
+      if (Webserver.argName(i) == "gps_interval") {
+        Settings.gps_upload_interval = Webserver.arg(i).toInt();
       }
-      if (WebServer.argName(i) == "idb_interval") {
-        Settings.readings_upload_interval = WebServer.arg(i).toInt();
+      if (Webserver.argName(i) == "idb_interval") {
+        Settings.readings_upload_interval = Webserver.arg(i).toInt();
       }
     }
 
     String content;
     SaveSettings();
-    WebServer.sendContent("HTTP/1.1 302\r\nLocation: /cfg\r\n");
+    Webserver.sendContent("HTTP/1.1 302\r\nLocation: /cfg\r\n");
     statusLED(false);
   }
 
@@ -354,7 +380,7 @@ void handle_savecfg() {
     }
     content += "}";
     content += "}";
-    WebServer.send(200, "application/json", content);
+    Webserver.send(200, "application/json", content);
     if (timerAPoff != 0)
       timerAPoff = millis() + 10000L;
     statusLED(false);
@@ -362,7 +388,7 @@ void handle_savecfg() {
 
   void handle_notfound() {
     String message = "WEB  : File not found: ";
-    message += WebServer.uri();
+    message += Webserver.uri();
     addLog(LOG_LEVEL_DEBUG, message);
-    WebServer.send(404, "text/html", "404 - Not Found");
+    Webserver.send(404, "text/html", "404 - Not Found");
   }

@@ -1,3 +1,11 @@
+#include <Arduino.h>
+#include "Sensors.h"
+#include "LoggerMisc.h"
+extern readingsStruct readings;
+
+
+OneWire oneWire(ONEWIRE_PIN);
+
 void readTemperatureSensors() {
   addLog(LOG_LEVEL_INFO, "TEMP : Reading temperature sensors");
   DallasTemperature sensors(&oneWire);

@@ -1,3 +1,47 @@
+
+
+#include "LoggerWebClient.h"
+#include <Arduino.h>
+void reportResetReason();
+void callHome();
+String getVarFromString(String var, String cfgData);
+String urlOpen(String path, String query);
+String httpGet(String path, String query, int) ;
+String httpsGet(String path, String query, int);
+void uploadFile(String content, String type);
+void sendDataToLogServer();
+
+
+
+
+
+
+
+extern SettingsStruct Settings ;
+extern float version;
+extern bool inventory_requested;
+extern uint32_t sysTime;
+extern byte logLevel;
+extern char chipMAC[12];
+
+//extern String query; 
+extern readingsStruct readings;
+
+void formatIP_STR2(const IPAddress& ip, char (&strIP)[20]) 
+{
+  sprintf_P(strIP, PSTR("%u.%u.%u.%u"), ip[0], ip[1], ip[2], ip[3]);
+}
+
+String formatIP2(const IPAddress& ip)
+ {
+  char strIP[20];
+  formatIP_STR2(ip, strIP);
+  return String(strIP);
+}
+
+
+
+
 void reportResetReason() {
   if (Settings.upload_get_ssl) {
     httpsGet("/api/reboot/", "&ver=" + String(version, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
@@ -14,10 +58,10 @@ void callHome() {
   addLog(LOG_LEVEL_INFO, "WEBCL: Calling home");
   String cfgData;
   if (Settings.upload_get_ssl) {
-    cfgData = httpsGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(esp_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP(WiFi.localIP()), Settings.upload_get_port);
+    cfgData = httpsGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(esp_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP2(WiFi.localIP()), Settings.upload_get_port);
 
   } else {
-    cfgData = httpGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(esp_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP(WiFi.localIP()), Settings.upload_get_port);
+    cfgData = httpGet("/api/callhome/", "&uptime=" + String(millis() / 1000) + "&free=" + String(esp_get_free_heap_size()) + "&rssi=" + getWiFiStrength(10) + "&ip=" + formatIP2(WiFi.localIP()), Settings.upload_get_port);
   }
   String returnValue;
   bool settingsChanged = 0;
@@ -109,11 +153,12 @@ String getVarFromString(String var, String cfgData) {
 
 String urlOpen(String path, String query) {
   if (path.startsWith("https://")) {
-    return (httpsGet(path, query));
+    return (httpsGet(path, query,443));
   } else if (path.startsWith("http://")) {
     return (httpGet(path, query));
   } else {
     addLog(LOG_LEVEL_ERROR, "WEBCL: Unsupported URL: " + path);
+    return ("");
   }
 }
 

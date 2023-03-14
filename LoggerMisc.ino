@@ -1,24 +1,17 @@
-/********************************************************************************************\
-  Time stuff
-  \*********************************************************************************************/
-#define SECS_PER_MIN  (60UL)
-#define SECS_PER_HOUR (3600UL)
-#define SECS_PER_DAY  (SECS_PER_HOUR * 24UL)
-#define DAYS_PER_WEEK (7UL)
-#define SECS_PER_WEEK (SECS_PER_DAY * DAYS_PER_WEEK)
-#define SECS_PER_YEAR (SECS_PER_WEEK * 52UL)
-#define SECS_YR_2000  (946684800UL) // the time at the start of y2k
-#define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
 
-struct  timeStruct {
-  uint8_t Second;
-  uint8_t Minute;
-  uint8_t Hour;
-  uint8_t Wday;   // day of week, sunday is day 1
-  uint8_t Day;
-  uint8_t Month;
-  uint8_t Year;   // offset from 1970;
-} tm;
+#include "LoggerMisc.h"
+#include "LoggerWiFi.h" 
+#include <Arduino.h>
+
+extern byte logLevel;
+//extern bool WifiIsAP();
+extern uint8_t ledChannelPin[16];
+extern SettingsStruct Settings;
+
+
+
+
+timeStruct tm;
 
 uint32_t prevMillis = 0;
 uint32_t sysTime = 0;
@@ -46,12 +39,15 @@ void addLogNoTime(byte level, String line) {
   Serial.print(line);
 }
 
-void formatIP(const IPAddress& ip, char (&strIP)[20]) {
+void formatIP_STR(const IPAddress& ip, char (&strIP)[20]) 
+{
   sprintf_P(strIP, PSTR("%u.%u.%u.%u"), ip[0], ip[1], ip[2], ip[3]);
 }
-String formatIP(const IPAddress& ip) {
+
+String formatIP(const IPAddress& ip)
+ {
   char strIP[20];
-  formatIP(ip, strIP);
+  formatIP_STR(ip, strIP);
   return String(strIP);
 }
 
@@ -281,7 +277,7 @@ void setTime(unsigned long t) {
   prevMillis = millis();  // restart counting from now (thanks to Korman for this fix)
 }
 
-void breakTime(unsigned long timeInput, struct timeStruct &tm) {
+void breakTime(unsigned long timeInput, timeStruct &tm) {
   uint8_t year;
   uint8_t month, monthLength;
   uint32_t time;

@@ -1,3 +1,27 @@
+
+#include "DataUpload.h"
+
+
+
+
+
+void uploadInfluxReadings();
+void uploadGetData();
+
+
+extern String httpGet(String path, String query, int port);
+//extern Point  sensor("MPPT");
+extern Point  sensor;
+extern SettingsStruct Settings;
+extern readingsStruct readings;
+extern bool inventory_complete;
+extern int nr_of_temp_sensors;
+extern bool inventory_requested;
+extern bool GPS_present;
+extern String inventory;
+
+
+
 void uploadInfluxReadings() {
   if (!Settings.upload_influx) {
     return;
@@ -44,8 +68,6 @@ void uploadInfluxReadings() {
 
 
 
-
-
 void uploadGetData() {
   if (inventory_requested && inventory_complete) {
     addLog(LOG_LEVEL_DEBUG, "DATA : Uploading inventory: " + inventory);
@@ -79,7 +101,8 @@ void uploadGetData() {
   }
   String response;
   if (Settings.upload_get_ssl) {
-    response = httpsGet("/update/", request, Settings.upload_get_port);
+    
+    response = httpGet("/update/", request, Settings.upload_get_port);
   } else {
     response = httpGet("/update/", request, Settings.upload_get_port);
   }

@@ -1,3 +1,22 @@
+#include "LoggerMisc.h"
+#include "VEdirect.h"
+#include "GPS.h"
+#include "Sensors.h"
+#include "LoggerMisc.h"
+
+extern bool pause_background_tasks;
+extern bool background_tasks_paused;
+extern bool firstbgrun;
+extern bool read_ve_direct_mppt;
+extern HardwareSerial SerialVE;
+extern String inventory;
+extern bool GPS_present;
+extern int nr_of_temp_sensors;
+extern bool inventory_complete;
+extern readingsStruct readings;
+
+
+
 void runBackgroundTasks() {
   // These tasks will run in the background.
 
