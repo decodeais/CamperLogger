@@ -17,33 +17,17 @@
 #include "LoggerSPIFSS.h"
 
 
-
-//#include <FS.h>
-//#include <SPI.h>
-//#include <SPIFFS.h>
-//#include <rom/rtc.h>
-//#include "esp_log.h"
-//#include <ctype.h>
-//#include <WiFi.h>
-//#include <WebServer.h>
-// for OTA from IDE
-//#include <ESPmDNS.h>
-//#include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-//
 #include <WiFiClientSecure.h>
-//#include <HTTPClient.h>
 #include <Update.h>
-//#include <OneWire.h>
-//#include <DallasTemperature.h>
 #include <base64.h>
 #include <TinyGPSPlus.h>
 
-//jps influxDB2
+//influxDB2
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
-static float version = 2.1;
+static float fileversion = 2.1;
 static String verstr = "Version 2.1";  //Make sure we can grep version from binary image
 
 // Changing this number may reset all settings to default!
@@ -166,7 +150,7 @@ void setup() {
   Serial.begin(115200);
   SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
 
-  addLog(LOG_LEVEL_INFO, "CORE : Version " + String(version, 3) + " starting");
+  addLog(LOG_LEVEL_INFO, "CORE : Version " + String(fileversion, 3) + " starting");
   addLog(LOG_LEVEL_DEBUG, "CORE : Size of stettins struct: " + String(sizeof(SettingsStruct)));
   for (byte x = 0; x < 16; x++)
     ledChannelPin[x] = -1;

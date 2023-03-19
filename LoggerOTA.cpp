@@ -2,7 +2,7 @@
 #include "LoggerOTA.h"
 
 extern char chipMAC[12];
-extern float version;
+float fileversion = VERSION;
 extern bool otaEnabled;
 extern SettingsStruct Settings;
 
@@ -26,7 +26,7 @@ void OTA() {
     addLog(LOG_LEVEL_ERROR, "OTA  : Connection to OTA server failed");
   }
   addLog(LOG_LEVEL_INFO, "OTA  : Connected to server");
-  query = "id=" + String(chipMAC) + "&ver=" + String(version) + "&";
+  query = "id=" + String(chipMAC) + "&ver=" + String(fileversion) + "&";
   String url = "http://" + String(server) + "/ota/?" + query;
   addLog(LOG_LEVEL_INFO, "OTA  : url:" + url);
   otaclient.println("GET " + url + " HTTP/1.1");

@@ -5,7 +5,7 @@
 #include <SPI.h>
 #include <SPIFFS.h>
 #include <rom/rtc.h>
-#include "esp_log.h"
+#include <esp_log.h>
 #include <ctype.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -50,7 +50,7 @@ String formattedTime();
 String formattedDate();
 void saveToRTC(byte Par1);
 boolean readFromRTC(byte* data);
-
+void analogWriteESP32(int pin, int value);
 void statusLED(boolean traffic);
 
 #endif /*Misc_h*/

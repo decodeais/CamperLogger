@@ -1,8 +1,6 @@
-
-#include <Arduino.h>
-
+//#include <IPAddress.h>
 // #include "esp_log.h"
-// #include <ctype.h>
+//#include <ctype.h>
 // #include <WiFi.h>
 // #include <WebServer.h>
 //  for OTA from IDE
@@ -11,11 +9,9 @@
 // #include <ArduinoOTA.h>
 //
 
-#include <WiFiClientSecure.h>
+#include <LoggerWiFi.h>
 
-// #include <ctype.h>
-
-#include "LoggerWiFi.h"
+#include "defs.h"
 
 extern uint32_t nextSyncTime;
 extern uint32_t sysTime; 
@@ -98,11 +94,16 @@ boolean WifiConnect(byte connectAttempts)
 {
   String log = "";
   char hostname[40];
+  char* WifiSSID2 = SecuritySettings.WifiSSID2;
+  char*  WifiKey2 = SecuritySettings.WifiKey2;
+  char* WifiSSID = SecuritySettings.WifiSSID;
+  char* WifiKey = SecuritySettings.WifiKey;
+  
   strncpy(hostname, WifiGetAPssid().c_str(), sizeof(hostname));
   WiFi.setHostname(hostname);
 
   // try to connect to the ap
-  if (WifiConnectSSID(SecuritySettings.WifiSSID2, SecuritySettings.WifiKey2, connectAttempts))
+  if (WifiConnectSSID(WifiSSID2, WifiKey2, connectAttempts))
   {
     nextSyncTime = sysTime;
     now();
@@ -111,7 +112,7 @@ boolean WifiConnect(byte connectAttempts)
   else
   {
     addLog(LOG_LEVEL_INFO, F("WIFI : tray connect to second wifi"));
-    if (WifiConnectSSID(SecuritySettings.WifiSSID, SecuritySettings.WifiKey, connectAttempts))
+    if (WifiConnectSSID(WifiSSID,WifiKey, connectAttempts))
     {
       nextSyncTime = sysTime;
       now();

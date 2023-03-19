@@ -8,6 +8,7 @@
 #include "LoggerWiFi.h"
 #include "LoggerSPIFSS.h"
 
+#include "LoggerMisc.h"
 void WebServerInit();
 void handle_wificonfig();
 void handle_savewificonfig();

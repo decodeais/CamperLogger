@@ -2,6 +2,7 @@
 
 #include "LoggerWebClient.h"
 #include <Arduino.h>
+#include <WiFi.h>
 void reportResetReason();
 void callHome();
 String getVarFromString(String var, String cfgData);
@@ -18,7 +19,7 @@ void sendDataToLogServer();
 
 
 extern SettingsStruct Settings ;
-extern float version;
+extern float fileversion;
 extern bool inventory_requested;
 extern uint32_t sysTime;
 extern byte logLevel;
@@ -44,9 +45,9 @@ String formatIP2(const IPAddress& ip)
 
 void reportResetReason() {
   if (Settings.upload_get_ssl) {
-    httpsGet("/api/reboot/", "&ver=" + String(version, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
+    httpsGet("/api/reboot/", "&ver=" + String(fileversion, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
   } else {
-    httpGet("/api/reboot/", "&ver=" + String(version, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
+    httpGet("/api/reboot/", "&ver=" + String(fileversion, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
   }
 }
 
@@ -116,14 +117,14 @@ void callHome() {
       return;
     }
     addLog(LOG_LEVEL_DEBUG, "OTA  : SW version available on server: " + String(srvVer, 3));
-    if (version == srvVer) {
+    if (fileversion == srvVer) {
       addLog(LOG_LEVEL_INFO, "OTA  : SW version up to date");
     }
-    if (version < srvVer) {
+    if (fileversion < srvVer) {
       addLog(LOG_LEVEL_INFO, "OTA  : New version available");
       OTA();
     }
-    if (version > srvVer && srvVer > 1) {
+    if (fileversion > srvVer && srvVer > 1) {
       addLog(LOG_LEVEL_INFO, "OTA  : Forced downgrade");
       OTA();
     }
