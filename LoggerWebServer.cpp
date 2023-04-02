@@ -1,4 +1,5 @@
 #include "LoggerWebserver.h"
+#include "windTurbine.h"
 
 extern WebServer Webserver;
 extern SecurityStruct SecuritySettings;
@@ -9,7 +10,40 @@ extern SettingsStruct settings;
 extern readingsStruct readings;
 extern unsigned long timerAPoff;
 
-String html_head = "<html><head><title>Camper Control</title><style>body {font-family: verdana;background-color: white; color: black;font-size: 40px;}td,th{font-size: 40px;text-align:left;}input[type=checkbox]{padding:2px;transform:scale(3);}input[type=password],select,input[type=submit],input[type=text],input[type=number]{-webkit-appearance: none;-moz-appearance: none; display: block;margin: 0;width: 100%;height: 56px;line-height: 40px;font-size: 40px;border: 1px solid #bbb;}a, a.vsited {font-size: 15px;text-decoration: none;color: #ffffff;background-color: #005ca9;padding: 10px;display: inline-block;border: 1px solid black;border-radius: 10px;text-transform: uppercase;font-weight: bold;}pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size: 17px;}</style><meta name='apple-mobile-web-app-capable' content='yes'><meta name='viewport' content='user-scalable=no, initial-scale=.5 width=device-width'><meta charset='UTF-8'></head><body><p><a href='/'>Home</a><a href='/wifi'>WiFi config</a><a href='/cfg'>Settings</a><a href='/mppt'>MPPT</a><a href='/sensors'>Sensors</a><hr>";
+extern AnaValueStruct AnaValue;
+extern SpecialSettingsStruct SpecialSettings;
+
+String html_head = 
+"<html><head><title>Camper Control</title><style>body {font-family: verdana;background-color: white; color: black;font-size: 40px;}td,th{font-size: 40px;text-align:left;}input[type=checkbox]{padding:2px;transform:scale(3);}input[type=password],select,input[type=submit],input[type=text],input[type=number]{-webkit-appearance: none;-moz-appearance: none; display: block;margin: 0;width: 100%;height: 56px;line-height: 40px;font-size: 40px;border: 1px solid #bbb;}a, a.vsited {font-size: 15px;text-decoration: none;color: #ffffff;background-color: #005ca9;padding: 10px;display: inline-block;border: 1px solid black;border-radius: 10px;text-transform: uppercase;font-weight: bold;}pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size: 17px;}</style><meta name='apple-mobile-web-app-capable' content='yes'><meta name='viewport' content='user-scalable=no, initial-scale=.5 width=device-width'><meta charset='UTF-8'></head><body><p><a href='/'>Home</a><a href='/wifi'>WiFi config</a><a href='/cfg'>Settings</a><a href='/mppt'>MPPT</a><a href='/sensors'>Sensors</a><hr>";
+String html_head_refresh = 
+"<html>\
+<head>\
+<title>Camper Control</title>\
+<style>body {font-family: verdana;background-color: white; color: black;font-size: 40px;}\
+td,th{font-size: 40px;text-align:left;}\
+input[type=checkbox]{padding:2px;transform:scale(3);}\
+input[type=password],select,input[type=submit],input[type=text],\
+input[type=number]{-webkit-appearance: none;-moz-appearance: none; display: block;margin: 0;width: 100%;height: 56px;line-height: 40px;font-size: 40px;border: 1px solid #bbb;}\
+a, a.vsited {font-size: 15px;text-decoration: none;color: #ffffff;background-color: #005ca9;padding: 10px;display: inline-block;border: 1px solid black;border-radius: 10px;text-transform: uppercase;font-weight: bold;}\
+pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size: 17px;}\
+</style>\
+<meta name='apple-mobile-web-app-capable' content='yes'><meta name='viewport' content='user-scalable=no, initial-scale=.5 width=device-width'>\
+<meta charset='UTF-8'>\
+<meta http-equiv='refresh' content='5' />\
+<style>table, th, td {border: 1px solid black;border-collapse: collapse}</style>\
+</head>\
+<body><p>\
+<a href='/'>Home</a>\
+<a href='/wifi'>WiFi config</a>\
+<a href='/cfg'>Settings</a>\
+<a href='/cfgSpecial'>Special</a>\
+<a href='/mppt'>MPPT</a>\
+<a href='/sensors'>Sensors</a>\
+<hr>";
+//"<html><head><title>Camper Control</title><style>body {font-family: verdana;background-color: white; color: black;font-size: 40px;}td,th{font-size: 40px;text-align:left;}input[type=checkbox]{padding:2px;transform:scale(3);}input[type=password],select,input[type=submit],input[type=text],input[type=number]{-webkit-appearance: none;-moz-appearance: none; display: block;margin: 0;width: 100%;height: 56px;line-height: 40px;font-size: 40px;border: 1px solid #bbb;}a, a.vsited {font-size: 15px;text-decoration: none;color: #ffffff;background-color: #005ca9;padding: 10px;display: inline-block;border: 1px solid black;border-radius: 10px;text-transform: uppercase;font-weight: bold;}pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size: 17px;}</style><meta name='apple-mobile-web-app-capable' content='yes'><meta name='viewport' content='user-scalable=no, initial-scale=.5 width=device-width'><meta charset='UTF-8'><meta http-equiv='refresh' content='5' /></head><body><p><a href='/'>Home</a><a href='/wifi'>WiFi config</a><a href='/cfg'>Settings</a><a href='/mppt'>MPPT</a><a href='/sensors'>Sensors</a><hr>";
+
+
+
 
 void WebServerInit() {
   addLog(LOG_LEVEL_INFO, F("WEB  : Server initializing"));
@@ -17,11 +51,14 @@ void WebServerInit() {
   // Prepare webserver pages
   Webserver.on("/", handle_root);
   Webserver.on("/mppt", handle_mppt);
-  Webserver.on("/sensors", handle_sensors);
+  Webserver.on("/sensors", handle_measure);
+  Webserver.on("/measure", handle_sensors);
   Webserver.on("/wifi", handle_wificonfig);
   Webserver.on("/savewifi", handle_savewificonfig);
   Webserver.on("/cfg", handle_cfg);
+  Webserver.on("/cfgSpecial", handle_cfgSpecial);
   Webserver.on("/savecfg", handle_savecfg);
+  Webserver.on("/savecfgSpecial", handle_savecfgSpecial);
   Webserver.on("/json", handle_json);
   Webserver.on("/reset", ResetFactory);
   Webserver.on("/ota", OTA);
@@ -128,7 +165,7 @@ void handle_mppt() {
   statusLED(true);
   addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /mppt"));
   String content;
-  content = html_head;
+  content = html_head_refresh;
   if (MPPT_present) {
     content += "Last MPPT readings:\n";
     content += "<pre>\n";
@@ -142,6 +179,44 @@ void handle_mppt() {
     timerAPoff = millis() + 10000L;
   statusLED(false);
 }
+
+
+void handle_measure() {
+  statusLED(true);
+  addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /measure"));
+  String content;
+  content = html_head_refresh;
+  
+    content += "Last Measurements:\n";
+    content += "<pre>\n";
+    
+content += "<table>";
+content += "<tr><td>AD Wandler</td><td>Voltage</td></tr>";
+    content += "<tr><td>ADC_0 Ubat</td><td> " + String(AnaValue.ch_0) + "mV</td><td> " + String(AnaValue.Ubatt) + "V</td></tr>";
+    content += "<tr><td>ADC_3 Ubal</td><td> " + String(AnaValue.ch_3) + "mV</td><td> " + String(AnaValue.Ubal) + "V</td></tr>";
+    content += "<tr><td>ADC_6 Uturb</td><td> " + String(AnaValue.ch_6) + "mV</td><td> " + String(AnaValue.Uturb) + "V</td></tr>";
+    content += "<tr><td>ADC_7 Ibatt</td><td> " + String(AnaValue.ch_7) + "mV</td><td> " + String(AnaValue.Ibatt) + "A</td></tr>";
+    content += "<tr><td>ADC_4 Iturb</td><td> " + String(AnaValue.ch_4) + "mV</td><td> " + String(AnaValue.Iturb) + "A</td></tr>";
+    content += "<tr><td>ADC_5 Uvcc</td><td> " + String(AnaValue.ch_5) + "mV</td><td> " + String(AnaValue.Uvcc) + "V</td></tr>";
+    content += "</table>";
+    content += "</pre>";
+    /*
+content += "Last Measurements:\n";
+    content += "<pre>\n";
+    content += "ADC_0 : " + String(AnaValue.ch_0) + "mV<br>";
+    content += "ADC_3 : " + String(AnaValue.ch_3) + "mV<br>";
+    content += "ADC_6 : " + String(AnaValue.ch_6) + "mV<br>";
+    content += "ADC_7 : " + String(AnaValue.ch_7) + "mV<br>";
+    content += "ADC_4 : " + String(AnaValue.ch_4) + "mV<br>";
+    content += "ADC_5 : " + String(AnaValue.ch_5) + "mV<br>";
+    content += "</pre>";
+    */
+  Webserver.send(200, "text/html", content);
+  if (timerAPoff != 0)
+    timerAPoff = millis() + 10000L;
+  statusLED(false);
+}
+
 void handle_sensors() {
   statusLED(true);
   addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /sensors"));
@@ -391,4 +466,93 @@ void handle_savecfg() {
     message += Webserver.uri();
     addLog(LOG_LEVEL_DEBUG, message);
     Webserver.send(404, "text/html", "404 - Not Found");
+  }
+
+
+
+void handle_cfgSpecial() {
+  statusLED(true);
+  addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /cfg"));
+  String content;
+  content = html_head;
+  content += "<form action=\"/savecfgSpecial\" method=\"get\">";
+  content += "<table>";
+  content += "<tr><th>Special settings</th><th></th></tr>";
+
+  content += "<tr><td>Converter ON</td><td><input type=\"checkbox\"";
+  if (SpecialSettings.ConverterON)
+    content += " checked";
+  content += " name=\"converter_on\" value=\"1\"></td></tr>";
+  content += "<tr><td>Turbine Stop</td><td><input type=\"checkbox\"";
+  if (SpecialSettings.TurbineSTOP)
+    content += " checked";
+  content += " name=\"turbine_stop\" value=\"1\"></td></tr>";
+
+  content +="<td>&nbsp;</td>";
+  content += "<tr><td>Converter Auto</td><td><input type=\"checkbox\"";
+  if (SpecialSettings.ConverterAuto)
+    content += " checked";
+  content += " name=\"converter_auto\" value=\"1\"></td></tr>";
+  content += "<tr><td>Voltage Converter ON</td><td><input type=number step=0.01 name=uconverter_on value=" +   String(SpecialSettings.U_ConverterON)  + "></td></tr>";
+  content += "<tr><td>Voltage Converter OFF</td><td><input type=number step=0.01 name=uconverter_off value=" + String(SpecialSettings.U_ConverterOFF) + "></td></tr>";
+ 
+  content +="<td>&nbsp;</td>";
+  content += "<tr><td>Turbine Auto</td><td><input type=\"checkbox\"";
+  if (SpecialSettings.TurbineAuto)
+    content += " checked";
+  content += " name=\"turbine_auto\" value=\"1\"></td></tr>"; 
+  content += "<tr><td>Voltage Turbine STOP</td><td><input type=number step=0.01 name=uturbine_stop value=" +   String(SpecialSettings.U_TurbineSTOP)  + "></td></tr>";
+  content += "<tr><td>Voltage Turbine RUN</td><td><input type=number step=0.01 name=uturbine_run value=" +     String(SpecialSettings.U_TurbineRUN)   + "></td></tr>";
+
+  content += "<tr><td colspan=2><button type=button onclick=this.style.background = 'green'></button><input type=submit value=Save settings></td></tr>";
+  content += "</table></form></html>";
+  Webserver.send(200, "text/html", content);
+  if (timerAPoff != 0)
+    timerAPoff = millis() + 10000L;
+  statusLED(false);
+}
+
+void handle_savecfgSpecial() {
+  statusLED(true);
+  addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /savecfgSpecial"));
+  // Set booleans to 0, we don't get variables from unchecked checkboxes.
+ SpecialSettings.TurbineAuto = 0;
+  SpecialSettings.TurbineSTOP = 0;
+  SpecialSettings.ConverterAuto = 0;
+  SpecialSettings.U_ConverterON = 0;
+  SpecialSettings.U_ConverterOFF = 0;
+  
+
+  for (int i = 0; i < Webserver.args(); i++) {
+    if (Webserver.argName(i) == "converter_on" && Webserver.arg(i) == "1") {
+      SpecialSettings.ConverterON = 1;
+    }
+    if (Webserver.argName(i) == "turbine_stop" && Webserver.arg(i) == "1") {
+      SpecialSettings.TurbineSTOP = 1;
+    }
+    if (Webserver.argName(i) == "turbine_auto" && Webserver.arg(i) == "1") {
+      SpecialSettings.TurbineAuto = 1;
+    }
+    if (Webserver.argName(i) == "converter_auto" && Webserver.arg(i) == "1") {
+      SpecialSettings.ConverterAuto = 1;
+    }
+    if (Webserver.argName(i) == "uconverter_on") {
+        SpecialSettings.U_ConverterON = Webserver.arg(i).toFloat();
+     }
+    
+    if (Webserver.argName(i) == "uconverter_off") {
+        SpecialSettings.U_ConverterOFF = Webserver.arg(i).toFloat();
+     }
+    if (Webserver.argName(i) == "uturbine_stop") {
+        SpecialSettings.U_TurbineSTOP = Webserver.arg(i).toFloat();
+     }
+    if (Webserver.argName(i) == "uturbine_run") {
+        SpecialSettings.U_TurbineRUN = Webserver.arg(i).toFloat();
+     }
+    }
+
+   // String content;
+    SaveSettings();
+    Webserver.sendContent("HTTP/1.1 302\r\nLocation: /cfgSpecial\r\n");
+    statusLED(false);
   }

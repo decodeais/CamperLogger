@@ -1,11 +1,12 @@
 #include "LoggerSPIFSS.h"
-
+#include <windTurbine.h>
 
 //#include <FS.h>
 
 
 extern SecurityStruct SecuritySettings;
 extern SettingsStruct Settings;
+extern SpecialSettingsStruct SpecialSettings;
 
 /********************************************************************************************\
   SPIFFS error handling
@@ -87,6 +88,10 @@ String SaveSettings(void) {
   err = SaveToFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(SettingsStruct));
   if (err.length())
     return (err);
+  err = SaveToFile((char*)FILE_SPECIALSETTINGS, 0, (byte*)&SpecialSettings, sizeof(SpecialSettingsStruct));
+  if (err.length())
+    return (err);
+
 
   return (SaveToFile((char*)FILE_SECURITY, 0, (byte*)&SecuritySettings, sizeof(SecurityStruct)));
 }

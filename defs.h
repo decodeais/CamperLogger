@@ -9,6 +9,8 @@
 #define LOG_LEVEL_DEBUG_MORE 4
 #define FILE_SECURITY "/security.dat" // WiFi settings
 #define FILE_SETTINGS "/settings.dat" // user settings
+#define FILE_SPECIALSETTINGS "/specset.dat" // special settings
+
 
 // TIME SETTINGS
 // DST setting is stored in settings struct and is updated from the server

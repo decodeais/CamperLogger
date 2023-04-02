@@ -27,6 +27,10 @@
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
+
+#include <windTurbine.h>
+extern AnaValueStruct AnaValue;
+
 static float fileversion = 2.1;
 static String verstr = "Version 2.1";  //Make sure we can grep version from binary image
 
@@ -128,6 +132,7 @@ bool background_tasks_paused = 0;
 bool firstbgrun = 1;
 
 void setup() {
+  
   pinMode(PIN_STATUS_LED, OUTPUT);
   pinMode(PIN_EXT_LED, OUTPUT);
   pinMode(GPS_PIN, INPUT);
@@ -146,6 +151,9 @@ void setup() {
     1,                // priority
     &BackgroundTask,  // Task handle
     0);               // core
+
+Init_Analog();
+
 
   Serial.begin(115200);
   SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
@@ -250,6 +258,9 @@ void loop() {
       digitalWrite(PIN_EXT_LED, HIGH);
       //callHome();
       //uploadGetData();
+            Serial.print("Reading ADC ");
+            Measure_Analog();
+
       uploadInfluxReadings();
       Serial.print("Writing MPPT: ");
       Serial.println(sensor.toLineProtocol());
