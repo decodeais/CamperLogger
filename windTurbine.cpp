@@ -1,6 +1,6 @@
 
 #include <Arduino.h>
-
+#include "defs.h"
 #include <driver/adc.h>
 #include <windTurbine.h>
 #include <esp32-hal-adc.h>
@@ -9,10 +9,10 @@
 #define I_SCALE_5A 0.54054054  /// 1/0.185
 #define U_SCALE 0.0110294117647 // 75/6.8
 
-#define TURBINE_STOP 2
-#define CONVERER_ON 2
+//#define TURBINE_STOP 2
+//#define CONVERER_ON 2
 
-#define ERRORCONV 2
+//#define ERRORCONV 2
 
 AnaValueStruct AnaValue;
 
@@ -34,8 +34,8 @@ void Init_Analog()
   analogSetClockDiv(2);                 // Set the divider for the ADC clock, default is 1, range is 1 - 255
 
 
-    pinMode(TURBINE_STOP, OUTPUT_OPEN_DRAIN);
-    pinMode(CONVERER_ON, OUTPUT_OPEN_DRAIN);
+    pinMode(TURBINE_STOP, OUTPUT);
+    pinMode(CONVERTER_ON, OUTPUT);
     pinMode(ERRORCONV, PULLUP);
 
 
@@ -77,6 +77,6 @@ void writeOutputs()
 {
 
 digitalWrite(TURBINE_STOP,SpecialSettings.TurbineSTOP);
-digitalWrite(TURBINE_STOP,SpecialSettings.ConverterON);
+digitalWrite(CONVERTER_ON,SpecialSettings.ConverterON);
 }
 

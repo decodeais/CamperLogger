@@ -38,4 +38,9 @@ void Measure_Analog();
 
 void Init_Analog();
 
+void writeOutputs();
+
+void read_inputs();
+
+
 #endif /* winTurbine*/

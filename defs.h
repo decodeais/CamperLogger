@@ -23,10 +23,19 @@
 // AP password
 #define DEFAULT_PASSWORD "loggerconfig"
 
+#define WIFI_RECONNECT_INTERVAL 300 // seconds
+
+
 // PIN DEFINITIONS
 #define PIN_STATUS_LED 2            // LED on ESP32 dev board
 #define PIN_EXT_LED 13              // LED on PCB
-#define WIFI_RECONNECT_INTERVAL 300 // seconds
+
+#define TURBINE_STOP 12              // Output to stopthe turbine
+#define CONVERTER_ON 14              // Out put to switch the converter on
+
+#define ERRORCONV 27                // input to read vonverter error output
+
+
 #define GPS_PIN 27                  // serial
 #define VE_DIRECT_PIN_2 16          //  input (RS-232 TTL)
 #define ONEWIRE_PIN 2               // one wire input (temperature sensors)
@@ -123,7 +132,5 @@ typedef struct
   String GPS_GPGGAsentence; // komplete sentences from GPS
 
 } readingsStruct;
-
-
 
 #endif /*defs_h*/

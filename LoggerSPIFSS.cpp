@@ -50,6 +50,10 @@ void ResetFactory(void) {
   fname = F(FILE_SETTINGS);
   InitFile(fname.c_str(), 1024);
 
+  fname = F(FILE_SPECIALSETTINGS);
+  InitFile(fname.c_str(), 512);
+
+
   fname = F(FILE_SECURITY);
   InitFile(fname.c_str(), 512);
 
@@ -104,6 +108,9 @@ String LoadSettings() {
   addLog(LOG_LEVEL_INFO, "FILE : Loading settings");
   String error;
   error = LoadFromFile((char*)FILE_SETTINGS, 0, (byte*)&Settings, sizeof(SettingsStruct));
+  if (error.length() == 0) {
+  error = LoadFromFile((char*)FILE_SPECIALSETTINGS, 0, (byte*)&SpecialSettings, sizeof(SpecialSettingsStruct));  
+  }
   if(Settings.config_file_version == 4 && CONFIG_FILE_VERSION == 5) {
     addLog(LOG_LEVEL_INFO, "FILE : Config file upgrade 4->5");
     Settings.config_file_version         = 5;

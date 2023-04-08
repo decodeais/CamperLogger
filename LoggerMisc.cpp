@@ -23,7 +23,8 @@ void addLog(byte level, String line) {
   if (level > logLevel) {
     return;
   }
-  if (sysTime > 1000) {
+ //JPS if (sysTime > 1000) {
+if (sysTime > 10) {
     line = formattedDate() + " " + formattedTime() + " CPU" + String(xPortGetCoreID()) + " " + line + "\n";
   } else {
     line = "00-00-0000 00:00:00 CPU" + String(xPortGetCoreID()) + " " + line + "\n";

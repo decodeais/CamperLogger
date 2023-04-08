@@ -472,7 +472,7 @@ void handle_savecfg() {
 
 void handle_cfgSpecial() {
   statusLED(true);
-  addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /cfg"));
+  addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /cfgSpecial"));
   String content;
   content = html_head;
   content += "<form action=\"/savecfgSpecial\" method=\"get\">";
@@ -504,7 +504,8 @@ void handle_cfgSpecial() {
   content += "<tr><td>Voltage Turbine STOP</td><td><input type=number step=0.01 name=uturbine_stop value=" +   String(SpecialSettings.U_TurbineSTOP)  + "></td></tr>";
   content += "<tr><td>Voltage Turbine RUN</td><td><input type=number step=0.01 name=uturbine_run value=" +     String(SpecialSettings.U_TurbineRUN)   + "></td></tr>";
 
-  content += "<tr><td colspan=2><button type=button onclick=this.style.background = 'green'></button><input type=submit value=Save settings></td></tr>";
+ // content += "<tr><td colspan=2><button type=button onclick=this.style.background = 'green'></button><input type=submit value=Save settings></td></tr>";
+content += "<tr><td colspan=\"2\"><input type=\"submit\" value=\"Save settings\"></td></tr>";
   content += "</table></form></html>";
   Webserver.send(200, "text/html", content);
   if (timerAPoff != 0)
@@ -519,8 +520,8 @@ void handle_savecfgSpecial() {
  SpecialSettings.TurbineAuto = 0;
   SpecialSettings.TurbineSTOP = 0;
   SpecialSettings.ConverterAuto = 0;
-  SpecialSettings.U_ConverterON = 0;
-  SpecialSettings.U_ConverterOFF = 0;
+  SpecialSettings.ConverterON = 0;
+  
   
 
   for (int i = 0; i < Webserver.args(); i++) {

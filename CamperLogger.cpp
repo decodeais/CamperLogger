@@ -238,6 +238,7 @@ Init_Analog();
 }
 
 void loop() {
+  void read_inputs();
   // check if AP should be turned on or off.
   updateAPstatus();
   // process incoming requests
@@ -326,4 +327,6 @@ void loop() {
     Serial.println(Settings.influx_bucket);
     Serial.println(Settings.influx_token);
   }
+  writeOutputs();
+  
 }
