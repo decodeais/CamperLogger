@@ -24,6 +24,8 @@ bool ErrorConverter;
 
 
 SpecialSettingsStruct SpecialSettings;
+bool stopTurbine;
+bool runConverter;
 
 void Init_Analog()
 {
@@ -72,6 +74,35 @@ void read_inputs()
 {
 ErrorConverter = digitalRead(ERRORCONV) ;
 }
+
+void control()
+{
+  if (SpecialSettings.TurbineAuto = true)
+  {
+    if (SpecialSettings.U_TurbineRUN < AnaValue.Uturb)
+    {
+     SpecialSettings.TurbineSTOP = false;
+    }
+    if (SpecialSettings.U_TurbineSTOP > AnaValue.Uturb)
+    {
+     SpecialSettings.TurbineSTOP = true;
+    }
+  }
+  if (SpecialSettings.ConverterAuto = true)
+  {
+    if (SpecialSettings.U_ConverterON < AnaValue.Ubatt)
+    {
+     SpecialSettings.ConverterON = true;
+    }
+    if (SpecialSettings.U_ConverterOFF > AnaValue.Ubatt)
+    {
+     SpecialSettings.ConverterON = false;
+    }
+  }
+
+}
+
+
 
 void writeOutputs()
 {

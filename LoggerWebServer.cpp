@@ -487,9 +487,10 @@ void handle_cfgSpecial() {
   if (SpecialSettings.TurbineSTOP)
     content += " checked";
   content += " name=\"turbine_stop\" value=\"1\"></td></tr>";
-
   content +="<td>&nbsp;</td>";
-  content += "<tr><td>Converter Auto</td><td><input type=\"checkbox\"";
+  content += "\
+  <tr><td>  Converter Auto </td><td>\
+  <input type=\"checkbox\"";
   if (SpecialSettings.ConverterAuto)
     content += " checked";
   content += " name=\"converter_auto\" value=\"1\"></td></tr>";
@@ -505,7 +506,13 @@ void handle_cfgSpecial() {
   content += "<tr><td>Voltage Turbine RUN</td><td><input type=number step=0.01 name=uturbine_run value=" +     String(SpecialSettings.U_TurbineRUN)   + "></td></tr>";
 
  // content += "<tr><td colspan=2><button type=button onclick=this.style.background = 'green'></button><input type=submit value=Save settings></td></tr>";
-content += "<tr><td colspan=\"2\"><input type=\"submit\" value=\"Save settings\"></td></tr>";
+content += "\
+<tr><td colspan=\"2\">\
+<input type=\"submit\" value=\"Save settings\">\
+</td></tr>";
+//content +="<iframe src=\"/sensors\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
+    content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=2\" width=\"800\" height=\"600\" frameborder=\"0\"></iframe>";
+
   content += "</table></form></html>";
   Webserver.send(200, "text/html", content);
   if (timerAPoff != 0)
