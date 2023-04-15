@@ -347,6 +347,11 @@ void handle_savecfg() {
   Settings.influx_write_geohash = 0;
   Settings.influx_write_coords = 0;
   Settings.influx_write_speed_heading = 0;
+  
+  Settings.upload_influx = 0;
+  Settings.influx_write_mppt = 0;
+  Settings.influx_write_gps = 0;
+  Settings.influx_write_temp = 0;
 
   for (int i = 0; i < Webserver.args(); i++) {
     if (Webserver.argName(i) == "get_enabled" && Webserver.arg(i) == "1") {
@@ -511,7 +516,8 @@ content += "\
 <input type=\"submit\" value=\"Save settings\">\
 </td></tr>";
 //content +="<iframe src=\"/sensors\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
-    content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=2\" width=\"800\" height=\"600\" frameborder=\"0\"></iframe>";
+    content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=2\" width=\"900\" height=\"600\" frameborder=\"0\"></iframe>";
+    content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=14\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
 
   content += "</table></form></html>";
   Webserver.send(200, "text/html", content);
