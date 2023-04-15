@@ -40,6 +40,9 @@
 #define VE_DIRECT_PIN_2 16          //  input (RS-232 TTL)
 #define ONEWIRE_PIN 2               // one wire input (temperature sensors)
 
+#define I2C_SDA 21                  // I2C data Pin
+#define I2C_SCL 22                  // I2C clock Pin
+
 #define DEVICE_MPPT 2 // MPPT output has only one block
 #define CONFIG_FILE_VERSION 5
 

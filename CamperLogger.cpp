@@ -22,7 +22,7 @@
 #include <Update.h>
 #include <base64.h>
 #include <TinyGPSPlus.h>
-
+#include <Wire.h>
 //influxDB2
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
@@ -90,6 +90,7 @@ IPAddress apGW(0, 0, 0, 0);
 unsigned long timerAPoff = 0;
 unsigned long timerLog = millis() + 60000L;  // first upload after 60 seconds.
 unsigned long timerGPS = millis() + 60000L;
+unsigned long timerConnectionCheck = millis() + 60000L;
 unsigned long nextWifiRetry = millis() + WIFI_RECONNECT_INTERVAL * 1000;
 
 // prototypes with default ports for http and https
@@ -131,12 +132,50 @@ bool background_tasks_paused = 0;
 
 bool firstbgrun = 1;
 
+
+void test_I2C() {
+  byte error, address;
+  int nDevices;
+  Serial.println("Scanning...");
+  nDevices = 0;
+  for(address = 1; address < 127; address++ ) {
+    //Serial.println(address);
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address<16) {
+        Serial.print("0");
+      }
+      Serial.println(address,HEX);
+      nDevices++;
+    }
+    else if (error==4) {
+      Serial.print("Unknow error at address 0x");
+      if (address<16) {
+        Serial.print("0");
+      }
+      Serial.println(address,HEX);
+    }    
+  }
+  if (nDevices == 0) {
+    Serial.println("No I2C devices found\n");
+  }
+  else {
+    Serial.println("done\n");
+  }
+  delay(5000);          
+}
+
+
 void setup() {
-  
+  Wire.begin(I2C_SDA, I2C_SCL,10000);
   pinMode(PIN_STATUS_LED, OUTPUT);
   pinMode(PIN_EXT_LED, OUTPUT);
   pinMode(GPS_PIN, INPUT);
   pinMode(VE_DIRECT_PIN_2, INPUT);
+  pinMode(21, INPUT); 
+   pinMode(22, INPUT);
   pinMode(25, INPUT);  // GPIO25 is parallel wired to GPIO39 because we can not use ADC2!
 
   digitalWrite(PIN_EXT_LED, HIGH);
@@ -157,7 +196,7 @@ Init_Analog();
 
   Serial.begin(115200);
   SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
-
+test_I2C();
   addLog(LOG_LEVEL_INFO, "CORE : Version " + String(fileversion, 3) + " starting");
   addLog(LOG_LEVEL_DEBUG, "CORE : Size of stettins struct: " + String(sizeof(SettingsStruct)));
   for (byte x = 0; x < 16; x++)
@@ -261,7 +300,7 @@ void loop() {
       //uploadGetData();
             Serial.print("Reading ADC ");
             Measure_Analog();
-
+            control();
       uploadInfluxReadings();
       Serial.print("Writing MPPT: ");
       Serial.println(sensor.toLineProtocol());
@@ -314,7 +353,8 @@ void loop() {
   //influxclient.setConnectionParams(INFLUXDB_URL,INFLUXDB_ORG, INFLUXDB_BUCKET,INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 
 
-
+if (timerConnectionCheck != 0 && timeOutReached(timerConnectionCheck) && WiFi.status() == WL_CONNECTED) {
+      timerConnectionCheck = millis() + 60000L;
   if (influxclient.validateConnection()) {
     Serial.print("Connected to InfluxDB: ");
     Serial.println(influxclient.getServerUrl());
@@ -329,4 +369,5 @@ void loop() {
   }
   writeOutputs();
   
+}
 }

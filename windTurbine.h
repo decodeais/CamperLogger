@@ -42,5 +42,7 @@ void writeOutputs();
 
 void read_inputs();
 
+void control();
+
 
 #endif /* winTurbine*/

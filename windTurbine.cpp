@@ -6,8 +6,8 @@
 #include <esp32-hal-adc.h>
 
 
-#define I_SCALE_5A 0.54054054  /// 1/0.185
-#define U_SCALE 0.0110294117647 // 75/6.8
+#define I_SCALE_5A 5.0*0.54054054  /// 1/0.185
+#define U_SCALE 0.0110294117647*1.082 // 75/6.8*x
 
 //#define TURBINE_STOP 2
 //#define CONVERER_ON 2
@@ -59,8 +59,8 @@ void Measure_Analog()
     AnaValue.ch_5 = analogReadMilliVolts(33);
     
 AnaValue.Uvcc = AnaValue.ch_5*0.002;
-AnaValue.Ubatt = AnaValue.ch_0*U_SCALE;
-AnaValue.Ubal = AnaValue.ch_3*U_SCALE;
+AnaValue.Ubatt = AnaValue.ch_3*U_SCALE;
+AnaValue.Ubal = AnaValue.ch_0*U_SCALE;
 AnaValue.Uturb = AnaValue.ch_6*U_SCALE;
 
 
@@ -77,18 +77,18 @@ ErrorConverter = digitalRead(ERRORCONV) ;
 
 void control()
 {
-  if (SpecialSettings.TurbineAuto = true)
+  if (SpecialSettings.TurbineAuto )
   {
-    if (SpecialSettings.U_TurbineRUN < AnaValue.Uturb)
+    if (AnaValue.Uturb < SpecialSettings.U_TurbineRUN )
     {
      SpecialSettings.TurbineSTOP = false;
     }
-    if (SpecialSettings.U_TurbineSTOP > AnaValue.Uturb)
+    if (AnaValue.Uturb > SpecialSettings.U_TurbineSTOP )
     {
      SpecialSettings.TurbineSTOP = true;
     }
   }
-  if (SpecialSettings.ConverterAuto = true)
+  if (SpecialSettings.ConverterAuto )
   {
     if (SpecialSettings.U_ConverterON < AnaValue.Ubatt)
     {
