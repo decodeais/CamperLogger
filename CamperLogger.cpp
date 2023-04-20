@@ -42,6 +42,7 @@ static String verstr = "Version 2.1";  //Make sure we can grep version from bina
 InfluxDBClient influxclient;
 // Declare Data point
 Point sensor("MPPT");
+Point Mturb("TURBINE");
 //*********************************************************************jps
 
 SettingsStruct Settings;
@@ -288,6 +289,7 @@ void loop() {
     if (timerLog != 0 && timeOutReached(timerLog) && WiFi.status() == WL_CONNECTED) {
       influxclient.setConnectionParams(Settings.influx_host, Settings.influx_org, Settings.influx_bucket, Settings.influx_token, InfluxDbCloud2CACert);
       sensor.clearFields();
+      Mturb.clearFields();
       timerLog = millis() + Settings.readings_upload_interval * 1000L;
       pause_background_tasks = 1;
       while (!background_tasks_paused) {
@@ -307,6 +309,12 @@ void loop() {
       // Write point
       if (!influxclient.writePoint(sensor)) {
         Serial.print("InfluxDB MPPT write failed: ");
+        Serial.println(influxclient.getLastErrorMessage());
+      }
+      Serial.print("Writing Mturb: ");
+      Serial.println(Mturb.toLineProtocol());
+      if (!influxclient.writePoint(Mturb)) {
+        Serial.print("InfluxDB Mturb write failed: ");
         Serial.println(influxclient.getLastErrorMessage());
       }
       digitalWrite(PIN_EXT_LED, LOW);

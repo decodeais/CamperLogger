@@ -1,6 +1,6 @@
 
 #include "DataUpload.h"
-
+#include "extEEPROM.h"
 
 
 
@@ -12,6 +12,7 @@ void uploadGetData();
 extern String httpGet(String path, String query, int port);
 //extern Point  sensor("MPPT");
 extern Point  sensor;
+extern Point  Mturb;
 extern SettingsStruct Settings;
 extern readingsStruct readings;
 extern bool inventory_complete;
@@ -19,7 +20,11 @@ extern int nr_of_temp_sensors;
 extern bool inventory_requested;
 extern bool GPS_present;
 extern String inventory;
+extern AnaValueStruct AnaValue;
+extern SpecialSettingsStruct SpecialSettings; 
 
+/*EEPROM*/
+extEEPROM myEEPROM(kbits_32, 1, 32, 0x50);
 
 
 void uploadInfluxReadings() {
@@ -45,8 +50,24 @@ void uploadInfluxReadings() {
     sensor.addField("Error", readings.MPPT_err);
     sensor.addField("Pmax", readings.MPPT_Pmax);
     sensor.addField("Yield_today", readings.MPPT_yday);
-    //sensor.addField("Yield_yesterday", readings.MPPT_yyesterd); 
+   // sensor.addField("Yield_yesterday", readings.MPPT_yday); 
     sensor.addField("Yield_total", readings.MPPT_ytot);
+
+Mturb.addField("Ubatt2", AnaValue.Ubatt);
+Mturb.addField("Ubal", AnaValue.Ubal);
+Mturb.addField("Uturb", AnaValue.Uturb);
+//sensor.addField("Ibatt", AnaValue.Ibatt);
+Mturb.addField("Iturb",-(AnaValue.Iturb-AnaValue.OffsIturb));
+//sensor.addField("Uvcc",AnaValue.Uvcc);
+Mturb.addField("TurbineSTOP",SpecialSettings.TurbineSTOP);
+Mturb.addField("ConverterON",SpecialSettings.ConverterON);
+Mturb.addField("Pturb",AnaValue.Pturb);
+Mturb.addField("Wturb",AnaValue.Wturb);
+
+
+
+
+
   }
   // load status and load current are not available on all MPPT's, values should
   // only be written to influxdb if they are present.
@@ -54,6 +75,13 @@ void uploadInfluxReadings() {
     sensor.addField("I_load", readings.MPPT_Iload);
     sensor.addField("RelaisLoad", readings.MPPT_load_on);
   }
+
+
+
+
+
+
+
 
 
   if (Settings.influx_write_temp) {

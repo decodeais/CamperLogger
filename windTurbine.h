@@ -2,7 +2,7 @@
 #define winTurbine_h
 
 
-
+/*
 typedef struct  {
   float ch_0;
   float ch_3;
@@ -33,7 +33,7 @@ float U_TurbineSTOP;
 float U_TurbineRUN;
 } SpecialSettingsStruct;
 
-
+*/
 void Measure_Analog();
 
 void Init_Analog();

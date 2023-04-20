@@ -136,4 +136,38 @@ typedef struct
 
 } readingsStruct;
 
+typedef struct  {
+  float ch_0;
+  float ch_3;
+  float ch_6;
+  float ch_7;
+  float ch_4;
+  float ch_5;
+  float ch_8;
+  float ch_9;
+  
+
+float Ubatt;
+float Ubal;
+float Uturb;
+float Ibatt;
+float Iturb;
+float Uvcc;
+float Pturb;
+float Wturb;
+float OffsIbatt;
+float OffsIturb;
+}AnaValueStruct;
+
+typedef struct {
+bool TurbineSTOP=true;
+bool ConverterON=false;
+bool ConverterAuto;
+float U_ConverterON;
+float U_ConverterOFF;
+bool TurbineAuto;
+float U_TurbineSTOP;
+float U_TurbineRUN;
+} SpecialSettingsStruct;
+
 #endif /*defs_h*/
