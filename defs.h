@@ -46,6 +46,8 @@
 #define DEVICE_MPPT 2 // MPPT output has only one block
 #define CONFIG_FILE_VERSION 5
 
+
+
 typedef struct 
 {
   char WifiSSID[32];

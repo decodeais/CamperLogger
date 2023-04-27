@@ -5,7 +5,7 @@
 #include <driver/adc.h>
 #include <windTurbine.h>
 #include <esp32-hal-adc.h>
-
+#include <remotedebug.h>
 
 #define I_SCALE_5A 2*5.4054054  /// A/V
 #define U_SCALE 0.0110294117647*1.082 // 75/6.8*x
@@ -63,11 +63,16 @@ AnaValue.Ubatt = AnaValue.ch_3*U_SCALE;
 AnaValue.Ubal = AnaValue.ch_0*U_SCALE;
 AnaValue.Uturb = AnaValue.ch_6*U_SCALE;
 */
+extern RemoteDebug Debug;
 AnaValue.Uvcc = Lowpass(AnaValue.ch_5*0.002, AnaValue.Uvcc, ActFilter);
 AnaValue.Ubatt = Lowpass(AnaValue.ch_3*U_SCALE,AnaValue.Ubatt, ActFilter);
 AnaValue.Ubal = Lowpass(AnaValue.ch_0*U_SCALE,AnaValue.Ubal, ActFilter);
 AnaValue.Uturb = Lowpass(AnaValue.ch_6*U_SCALE,AnaValue.Uturb, ActFilter);
 
+debugV("Uvcc : %f",AnaValue.Uvcc);
+debugV("Ubatt : %f",AnaValue.Ubatt);
+debugV("Ubal : %f",AnaValue.Ubal);
+debugV("Uturb : %f",AnaValue.Uturb);
 
 /*
 AnaValue.Ibatt = (AnaValue.ch_7*2.0/1000.0-AnaValue.Uvcc/2.0)*I_SCALE_5A; 
@@ -75,6 +80,11 @@ AnaValue.Iturb = (AnaValue.ch_4*2.0/1000.0-AnaValue.Uvcc/2.0)*I_SCALE_5A;
 */
 AnaValue.Ibatt = Lowpass((AnaValue.ch_7-AnaValue.ch_5/2.0)/1000*I_SCALE_5A, AnaValue.Ibatt, ActFilter) ; 
 AnaValue.Iturb = Lowpass((AnaValue.ch_4-AnaValue.ch_5/2.0)/1000*I_SCALE_5A, AnaValue.Iturb, ActFilter) ; 
+
+debugV("Ibatt : %f",AnaValue.Ibatt);
+debugV("Iturb : %f",AnaValue.Iturb);
+
+
 
 if ( SpecialSettings.TurbineSTOP == true) // calibration when turbine stopped
 {

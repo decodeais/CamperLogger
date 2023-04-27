@@ -27,6 +27,7 @@
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
+#include "RemoteDebug.h"        //https://github.com/JoaoLopesF/RemoteDebug
 
 #include <windTurbine.h>
 extern AnaValueStruct AnaValue;
@@ -36,7 +37,8 @@ static String verstr = "Version 2.1";  //Make sure we can grep version from bina
 
 // Changing this number may reset all settings to default!
 #define CONFIG_FILE_VERSION 5
-
+RemoteDebug Debug;
+String temp;
 //*************************************************************************
 // Declare InfluxDB client instance with preconfigured InfluxCloud certificate
 InfluxDBClient influxclient;
@@ -137,39 +139,35 @@ bool firstbgrun = 1;
 void test_I2C() {
   byte error, address;
   int nDevices;
-  Serial.println("Scanning...");
+  //Serial.println("I2C Scanning...");
+  debugV("I2C Scanning...");
   nDevices = 0;
   for(address = 1; address < 127; address++ ) {
-    //Serial.println(address);
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
     if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
+      debugV("I2C device found at address 0x%x",HEX);
       nDevices++;
     }
     else if (error==4) {
-      Serial.print("Unknow error at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
+      debugE("Unknow error at address 0x%x",HEX);
     }    
   }
   if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
+    debugE("No I2C devices found\n");
   }
   else {
-    Serial.println("done\n");
+    debugV("done\n");
   }
   delay(5000);          
 }
 
 
 void setup() {
+
+
+
+
   Wire.begin(I2C_SDA, I2C_SCL,10000);
   pinMode(PIN_STATUS_LED, OUTPUT);
   pinMode(PIN_EXT_LED, OUTPUT);
@@ -197,9 +195,11 @@ Init_Analog();
 
   Serial.begin(115200);
   SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
-test_I2C();
-  addLog(LOG_LEVEL_INFO, "CORE : Version " + String(fileversion, 3) + " starting");
-  addLog(LOG_LEVEL_DEBUG, "CORE : Size of stettins struct: " + String(sizeof(SettingsStruct)));
+
+ // addLog(LOG_LEVEL_INFO, "CORE : Version " + String(fileversion, 3) + " starting");
+
+ // addLog(LOG_LEVEL_DEBUG, "CORE : Size of stettins struct: " + String(sizeof(SettingsStruct)));
+ //debugV("CORE : Size of settings struct: %d", sizeof(SettingsStruct));
   for (byte x = 0; x < 16; x++)
     ledChannelPin[x] = -1;
 
@@ -211,21 +211,33 @@ test_I2C();
 
   LoadSettings();
 
-  addLog(LOG_LEVEL_INFO, "CORE : DST setting: " + String(Settings.DST));
+  //addLog(LOG_LEVEL_INFO, "CORE : DST setting: " + String(Settings.DST));
 
   WifiAPconfig();
   WifiConnect(3);
   if (WiFi.status() == WL_CONNECTED) {
-    addLog(LOG_LEVEL_DEBUG, "WIFI : WiFi connected, disabling AP in 10 seconds");
+    Serial.println("WIFI : WiFi connected, disabling AP in 10 seconds");
     timerAPoff = millis() + 10000L;
   }
   delay(100);
   WebServerInit();
 
+  
+ /* http://remotedebugapp.pluggable.biz*/
+  MDNS.addService("telnet", "tcp", 23); // Telnet server of RemoteDebug, register as telnet
+  Debug.begin("HOST_NAME"); // Initialize the WiFi server
+  Debug.setResetCmdEnabled(true); // Enable the reset command
+
+	Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
+
+	Debug.showColors(true); // Colors
+  
+debugI("Ready");
+  debugI("IP address: %s",WiFi.localIP());
 
   reportResetReason();  // report to the backend what caused the reset
   callHome();           // get settings and current software version from server
-  addLog(LOG_LEVEL_INFO, "CORE : Setup done. Starting main loop");
+  debugV( "CORE : Setup done. Starting main loop");
 
   //jps***OTA for Arduino IDE *****************************************************
   // Port defaults to 3232
@@ -250,34 +262,45 @@ test_I2C();
         type = "filesystem";
 
       // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating " + type);
+      debugI("Start updating %s",type);
     })
     .onEnd([]() {
-      Serial.println("\nEnd");
+      debugI("End");
     })
     .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+      debugI("Progress: %u%%\r", (progress / (total / 100)));
     })
     .onError([](ota_error_t error) {
       Serial.printf("Error[%u]: ", error);
       if (error == OTA_AUTH_ERROR)
-        Serial.println("Auth Failed");
+        debugE("Auth Failed");
       else if (error == OTA_BEGIN_ERROR)
-        Serial.println("Begin Failed");
+        debugE("Begin Failed");
       else if (error == OTA_CONNECT_ERROR)
-        Serial.println("Connect Failed");
+        debugE("Connect Failed");
       else if (error == OTA_RECEIVE_ERROR)
-        Serial.println("Receive Failed");
+        debugE("Receive Failed");
       else if (error == OTA_END_ERROR)
-        Serial.println("End Failed");
+        debugE("End Failed");
     });
   ArduinoOTA.begin();
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+
+
+
+Debug.handle();
+ test_I2C(); 
+  
+
+	
+
 }
 
 void loop() {
+
+Debug.handle();
+
+
+
   void read_inputs();
   // check if AP should be turned on or off.
   updateAPstatus();
@@ -296,7 +319,7 @@ void loop() {
         delay(100);
       }
 
-      addLog(LOG_LEVEL_INFO, "CORE : Uploading readings");
+      debugI("CORE : Uploading readings");
       digitalWrite(PIN_EXT_LED, HIGH);
       //callHome();
       //uploadGetData();
@@ -329,7 +352,7 @@ void loop() {
       while (!background_tasks_paused) {
         delay(100);
       }
-      addLog(LOG_LEVEL_INFO, "CORE : Uploading GPS data");
+      debugI("CORE : Uploading GPS data");
       digitalWrite(PIN_EXT_LED, HIGH);
       digitalWrite(PIN_EXT_LED, LOW);
       if (GPS_present) {
@@ -347,7 +370,7 @@ void loop() {
   }
   // retry WiFi connection
   if (WiFi.status() != WL_CONNECTED && timeOutReached(nextWifiRetry)) {
-    addLog(LOG_LEVEL_INFO, "WIFI : Not connected, trying to connect");
+    Serial.println("WIFI : Not connected, trying to connect");
     WifiConnect(3);
     nextWifiRetry = millis() + WIFI_RECONNECT_INTERVAL * 1000;
   }
@@ -364,18 +387,29 @@ void loop() {
 if (timerConnectionCheck != 0 && timeOutReached(timerConnectionCheck) && WiFi.status() == WL_CONNECTED) {
       timerConnectionCheck = millis() + 60000L;
   if (influxclient.validateConnection()) {
-    Serial.print("Connected to InfluxDB: ");
-    Serial.println(influxclient.getServerUrl());
+    temp = "Connected to InfluxDB:"+influxclient.getServerUrl();
+    
+    Debug.println(temp);
+    } 
+    else {
+    debugE("InfluxDB connection failed: ");
+    debugE("agaagga  %.96s",Settings.influx_host);
+    debugE("Organisation : %.20s",Settings.influx_org);
+    debugE("Bucket : %.20s",Settings.influx_bucket);
+    debugE("Token : %.100s",Settings.influx_token);
+    temp ="Error : "+influxclient.getLastErrorMessage();
+    Debug.println(temp);
+Debug.println("Error : "+influxclient.getLastErrorMessage());
 
-  } else {
-    Serial.print("InfluxDB connection failed: ");
-    Serial.println(influxclient.getLastErrorMessage());
-    Serial.println(Settings.influx_host);
+    /*Serial.printf("error : %s",influxclient.getLastErrorMessage());
+    Serial.printf("host : %s",Settings.influx_host);
     Serial.println(Settings.influx_org);
     Serial.println(Settings.influx_bucket);
-    Serial.println(Settings.influx_token);
-  }
+    Serial.println(Settings.influx_token);*/
+  }  
   writeOutputs();
   
+
+
 }
 }
