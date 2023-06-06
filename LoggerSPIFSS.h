@@ -21,6 +21,7 @@ String SaveSettings(void);
 String FileError(int line, const char * fname);
 void fileSystemCheck();
 void ResetFactory(void);
+void ResetCounter(void);
 //String SaveSettings(void);
 
 String readFile(String filename);

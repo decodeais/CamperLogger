@@ -15,7 +15,7 @@
 #include "LoggerWebClient.h"
 #include "DataUpload.h"
 #include "LoggerSPIFSS.h"
-
+#include <exteeprom.h>
 
 #include <ArduinoOTA.h>
 #include <WiFiClientSecure.h>
@@ -26,12 +26,14 @@
 //influxDB2
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
-
+#include "eeprom.h"
 #include "RemoteDebug.h"        //https://github.com/JoaoLopesF/RemoteDebug
-
+#include "eeprom.h"
 #include <windTurbine.h>
 extern AnaValueStruct AnaValue;
-
+extern eepromStruct testdata;
+extEEPROM myEEPROM(kbits_256, 1, 64, 0x50);
+//extern extEEPROM myEEPROM;
 static float fileversion = 2.1;
 static String verstr = "Version 2.1";  //Make sure we can grep version from binary image
 
@@ -288,10 +290,10 @@ debugI("Ready");
 
 
 Debug.handle();
- test_I2C(); 
-  
-
-	
+// test_I2C(); 
+    test();
+ myEEPROM.read(data(eepromStruct,testdata,Energie));
+ //AnaValue.Wturb=	testdata.Energie;
 
 }
 
@@ -320,6 +322,7 @@ Debug.handle();
       }
 
       debugI("CORE : Uploading readings");
+    
       digitalWrite(PIN_EXT_LED, HIGH);
       //callHome();
       //uploadGetData();

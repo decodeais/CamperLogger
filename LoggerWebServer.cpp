@@ -61,6 +61,8 @@ void WebServerInit() {
   Webserver.on("/savecfgSpecial", handle_savecfgSpecial);
   Webserver.on("/json", handle_json);
   Webserver.on("/reset", ResetFactory);
+  Webserver.on("/resCount", ResetCounter);
+  
   Webserver.on("/ota", OTA);
 
   Webserver.onNotFound(handle_notfound);

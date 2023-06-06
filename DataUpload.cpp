@@ -24,7 +24,7 @@ extern AnaValueStruct AnaValue;
 extern SpecialSettingsStruct SpecialSettings; 
 
 /*EEPROM*/
-extEEPROM myEEPROM(kbits_32, 1, 32, 0x50);
+//extEEPROM myEEPROM(kbits_32, 1, 32, 0x50);
 
 
 void uploadInfluxReadings() {
@@ -58,7 +58,7 @@ Mturb.addField("Ubal", AnaValue.Ubal);
 Mturb.addField("Uturb", AnaValue.Uturb);
 //sensor.addField("Ibatt", AnaValue.Ibatt);
 Mturb.addField("Iturb",-(AnaValue.Iturb-AnaValue.OffsIturb));
-//sensor.addField("Uvcc",AnaValue.Uvcc);
+Mturb.addField("Uvcc",AnaValue.Uvcc);
 Mturb.addField("TurbineSTOP",SpecialSettings.TurbineSTOP);
 Mturb.addField("ConverterON",SpecialSettings.ConverterON);
 Mturb.addField("Pturb",AnaValue.Pturb);

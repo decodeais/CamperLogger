@@ -33,6 +33,11 @@ void fileSystemCheck() {
     ResetFactory();
   }
 }
+void ResetCounter(void)
+{
+ResCount();
+return;
+}
 
 void ResetFactory(void) {
   addLog(LOG_LEVEL_ERROR, "Factory reset.");

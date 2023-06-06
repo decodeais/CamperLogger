@@ -43,6 +43,6 @@ void writeOutputs();
 void read_inputs();
 
 void control();
-
+void ResCount();
 
 #endif /* winTurbine*/

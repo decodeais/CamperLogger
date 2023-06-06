@@ -141,10 +141,12 @@ if  (Wtemp > 1000.0)
   Wtemp = modf (Wtemp , &TempInt); // fractpart = modf (param , &intpart);
   debugV("Wtemp : %f",Wtemp);                                                                                                                      
 //AnaValue.Wturb += TempInt;
+debugV("TempInt : %f",TempInt);   
+debugV("testdata.Energie : %d",testdata.Energie);   
 testdata.Energie += TempInt;
 myEEPROM.write(offsetof(eepromStruct,Energie),(byte*) &(testdata.Energie), sizeof(testdata.Energie));
 }           
-AnaValue.Wturb=(testdata.Energie+Wtemp)/3600;
+AnaValue.Wturb=((float)(testdata.Energie+Wtemp))/3600.0;
 debugV("Wturb : %f",AnaValue.Wturb);
 //testdata.Energie = AnaValue.Wturb;
 
