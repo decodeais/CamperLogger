@@ -1,9 +1,9 @@
 
 #include "VEdirect.h"
-
+#include "RemoteDebug.h"        //https://github.com/JoaoLopesF/RemoteDebug
 extern HardwareSerial SerialVE;
 extern bool MPPT_present;
-
+extern RemoteDebug Debug;
 extern readingsStruct readings;
 
 String lastBlockMPPT = "";
@@ -63,6 +63,7 @@ void readVEdirect(int device)
           if (device == DEVICE_MPPT)
           {
             parseMPPT(line);
+            debugV("%s /n",line);
           }
 
           // checksum validation
@@ -78,7 +79,8 @@ void readVEdirect(int device)
                 lastBlockMPPT = thisBlock;
                 MPPT_present = 1;
                 readings.MPPT_ok = 1;
-                addLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                debugI("VICTR: Checksum OK reading %s" , devicename);
               }
 
               return;
@@ -87,8 +89,9 @@ void readVEdirect(int device)
             {
               if (device == DEVICE_MPPT)
               {
-                readings.MPPT_ok = 0;
-                addLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
+               readings.MPPT_ok = 0;
+                //JPSaddLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
+                debugI("VICTR: Checksum error reading %s " , devicename);
                 lastBlockMPPT = thisBlock + "Invalid checksum BMV block 1";
               }
             }
@@ -102,7 +105,8 @@ void readVEdirect(int device)
   if (!block_end)
   {
     // timeout reading MPPT or at least end of block not found
-    addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
+    //JPS addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
+    debugI( "VICTR: Timeout reading VE.direct " , devicename);
     return;
   }
 }

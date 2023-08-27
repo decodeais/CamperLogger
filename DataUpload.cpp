@@ -52,7 +52,8 @@ void uploadInfluxReadings() {
     sensor.addField("Yield_today", readings.MPPT_yday);
    // sensor.addField("Yield_yesterday", readings.MPPT_yday); 
     sensor.addField("Yield_total", readings.MPPT_ytot);
-
+  }
+if (Settings.influx_write_mppt) {  
 Mturb.addField("Ubatt2", AnaValue.Ubatt);
 Mturb.addField("Ubal", AnaValue.Ubal);
 Mturb.addField("Uturb", AnaValue.Uturb);
