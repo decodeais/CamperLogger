@@ -5,8 +5,8 @@
 #include <driver/adc.h>
 #include <windTurbine.h>
 #include <esp32-hal-adc.h>
-#include <remotedebug.h>
-#include <exteeprom.h>
+#include <RemoteDebug.h>
+#include <extEEPROM.h> 
 #include  "eeprom.h"
 
 
@@ -179,10 +179,10 @@ void control()
       }
     }
   }
-  else
+  /*else
   {
     SpecialSettings.TurbineSTOP = true;
-  }
+  }*/
   if (SpecialSettings.ConverterAuto )
   {
     if (SpecialSettings.U_ConverterON < AnaValue.Ubatt)

@@ -1,9 +1,9 @@
 #include "RemoteDebug.h"        //https://github.com/JoaoLopesF/RemoteDebug
 //twtwqtzwqtweqtwetwqt
 #include "defs.h"
-#include <exteeprom.h>
+#include <extEEPROM.h>
 #include "RemoteDebug.h" 
-#include <arduino.h>
+#include <Arduino.h>
 #include <stddef.h>
 #include <typeinfo>
 #include "eeprom.h"

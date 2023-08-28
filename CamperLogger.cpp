@@ -15,8 +15,8 @@
 #include "LoggerWebClient.h"
 #include "DataUpload.h"
 #include "LoggerSPIFSS.h"
-#include <exteeprom.h>
-
+//#include <exteeprom.h>
+#include <extEEPROM.h>
 #include <ArduinoOTA.h>
 #include <WiFiClientSecure.h>
 #include <Update.h>
