@@ -1,14 +1,16 @@
 #include "LoggerMisc.h"
 #include "VEdirect.h"
-#include "GPS.h"
-#include "Sensors.h"
+//#include "Sensors.h"
 #include "LoggerMisc.h"
 
 extern bool pause_background_tasks;
 extern bool background_tasks_paused;
 extern bool firstbgrun;
 extern bool read_ve_direct_mppt;
-extern HardwareSerial SerialVE;
+extern bool read_ve_direct_converter;
+
+extern HardwareSerial Serial_VE_MPPT;
+extern HardwareSerial Serial_VE_Converter;
 extern String inventory;
 extern bool GPS_present;
 extern int nr_of_temp_sensors;
@@ -51,30 +53,43 @@ void runBackgroundTasks() {
   
  // Read Victron MPPT charge controller
   if (read_ve_direct_mppt) {
-    SerialVE.begin(19200, SERIAL_8N1, VE_DIRECT_PIN_2, /*jps(int8_t)*/1, false);
+    Serial_VE_MPPT.begin(19200, SERIAL_8N1, VE_DIRECT_PIN_2, /*jps(int8_t)*/1, false);
    
     
     vTaskDelay(10 / portTICK_PERIOD_MS);
     readVEdirect(DEVICE_MPPT);
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    SerialVE.end();
+    Serial_VE_MPPT.end();
+  }
+
+  // Read Victron MPPT charge controller
+  if (read_ve_direct_converter) {
+    Serial_VE_Converter.begin(19200, SERIAL_8N1, VE_DIRECT_PIN_1, /*jps(int8_t)*/1, true);
+   
+    
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    readVEdirect_Converter();
+
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    Serial_VE_Converter.end();
   }
   
   vTaskDelay(10 / portTICK_PERIOD_MS);
-  readGPS();
+  //readGPS();
 
   vTaskDelay(10 / portTICK_PERIOD_MS);
-  readTemperatureSensors();
+  //readTemperatureSensors();
 
   // Now that we have read all devices, build inventory list
   inventory = "";
-
+/*
   if (GPS_present) {
     inventory += "GPS module detected";
     inventory += "\n\n";
   }
-
+*/
+/*
   nr_of_temp_sensors = 0;
   for (int i = 0; i < 10; i++) {
     vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -89,4 +104,5 @@ void runBackgroundTasks() {
     inventory = "No devices detected";
   }
   inventory_complete = 1;
+  */
 }

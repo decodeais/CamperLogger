@@ -129,7 +129,7 @@ String LoadSettings() {
     strncpy(Settings.upload_get_host, "camper-logger.footage.one", 64); // "http://192.168.40.187:7070/log"
     Settings.upload_get_port             = 80;
     Settings.upload_get_ssl              = 1;
-    Settings.gps_upload_interval         = 60;               // seconds
+   // Settings.gps_upload_interval         = 60;               // seconds
     Settings.readings_upload_interval    = 60;               // seconds
     SaveSettings();
   }

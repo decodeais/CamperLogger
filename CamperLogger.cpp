@@ -4,7 +4,7 @@
 */
 
 // Partition scheme: Minimal SPIFFS (1.9MB APP with OTA)/190KB SPIFFS)
-#include "GPS.h"
+// #include "GPS.h"
 #include "defs.h"
 
 #include "VEdirect.h"
@@ -34,7 +34,7 @@ extern AnaValueStruct AnaValue;
 extern eepromStruct testdata;
 extEEPROM myEEPROM(kbits_256, 1, 64, 0x50);
 //extern extEEPROM myEEPROM;
-static float fileversion = 2.1;
+extern float fileversion;
 static String verstr = "Version 2.1";  //Make sure we can grep version from binary image
 
 // Changing this number may reset all settings to default!
@@ -46,6 +46,7 @@ String temp;
 InfluxDBClient influxclient;
 // Declare Data point
 Point sensor("MPPT");
+Point Converter("CONV");
 Point Mturb("TURBINE");
 //*********************************************************************jps
 
@@ -66,22 +67,24 @@ readingsStruct readings;
 // DATA COLLECTION VARIABLES
 
 String inventory = "";
-bool inventory_complete = 0;
-int nr_of_temp_sensors = 0;
-bool inventory_requested = 0;
+//bool inventory_complete = 0;
+//int nr_of_temp_sensors = 0;
+//bool inventory_requested = 0;
 
 // We are only going to upload readings from connected devices.
 // These values will be set to 1 after the first valid reading
 // from the respective device is received.
-bool GPS_present = 0;
+//bool GPS_present = 0;
 bool MPPT_present = 0;
+bool Converter_present = 0;
 
 
 // toggle different data sources. Do we need this?
 bool read_ve_direct_mppt = 1;  // read MPPT or skip it?
+bool read_ve_direct_converter = 1;  // read MPPT or skip it?
 bool read_temp = 0;            // read temperature sensors or skip it?
-bool read_gps = 0;             // read GPS data or skip it?
-bool read_water_level = 0;     // read tank level sensor or skip it?
+//bool read_gps = 0;             // read GPS data or skip it?
+//bool read_water_level = 0;     // read tank level sensor or skip it?
 
 String Fcrc;
 uint8_t ledChannelPin[16];
@@ -107,17 +110,18 @@ unsigned long nextWifiRetry = millis() + WIFI_RECONNECT_INTERVAL * 1000;
 WebServer Webserver(80);
 
 // enable or disable OTA
-boolean otaEnabled = false;
+//boolean otaEnabled = false;
 
 // Serial ports
 // UART 0 is used for the console. Because the ESP32 has 3 UARTs and we need 3,
 // HardwareSerial(2) is switched to the according pin if we want to read BMV or MPPT.
-HardwareSerial SerialGPS(1);  // GPS input (NMEA)
-HardwareSerial SerialVE(2);   // VE direct connections
+//Converter HardwareSerial SerialGPS(1);  // GPS input (NMEA)
+HardwareSerial Serial_VE_Converter(1);  // Converter connection
+HardwareSerial Serial_VE_MPPT(2);   // VE direct connections
 
 //void onRmcUpdate(nmea::RmcData const);
 //void onGgaUpdate(nmea::GgaData const);
-TinyGPSPlus gpsParser;
+//TinyGPSPlus gpsParser;
 
 /**************************************************************************************
  * GLOBAL VARIABLES
@@ -173,7 +177,7 @@ void setup() {
   Wire.begin(I2C_SDA, I2C_SCL,10000);
   pinMode(PIN_STATUS_LED, OUTPUT);
   pinMode(PIN_EXT_LED, OUTPUT);
-  pinMode(GPS_PIN, INPUT);
+  pinMode(VE_DIRECT_PIN_1, INPUT);
   pinMode(VE_DIRECT_PIN_2, INPUT);
   pinMode(21, INPUT); 
    pinMode(22, INPUT);
@@ -196,7 +200,7 @@ Init_Analog();
 
 
   Serial.begin(115200);
-  SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
+ //Converter SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
 
  // addLog(LOG_LEVEL_INFO, "CORE : Version " + String(fileversion, 3) + " starting");
 
@@ -238,7 +242,7 @@ debugI("Ready");
   debugI("IP address: %s",WiFi.localIP());
 
   reportResetReason();  // report to the backend what caused the reset
-  callHome();           // get settings and current software version from server
+ // callHome();           // get settings and current software version from server
   debugV( "CORE : Setup done. Starting main loop");
 
   //jps***OTA for Arduino IDE *****************************************************
@@ -314,6 +318,7 @@ Debug.handle();
     if (timerLog != 0 && timeOutReached(timerLog) && WiFi.status() == WL_CONNECTED) {
       influxclient.setConnectionParams(Settings.influx_host, Settings.influx_org, Settings.influx_bucket, Settings.influx_token, InfluxDbCloud2CACert);
       sensor.clearFields();
+      Converter.clearFields();
       Mturb.clearFields();
       timerLog = millis() + Settings.readings_upload_interval * 1000L;
       pause_background_tasks = 1;
@@ -337,6 +342,13 @@ Debug.handle();
         Serial.print("InfluxDB MPPT write failed: ");
         Serial.println(influxclient.getLastErrorMessage());
       }
+      Serial.print("Writing Converter: ");
+      Serial.println(Converter.toLineProtocol());
+      // Write point
+      if (!influxclient.writePoint(Converter)) {
+        Serial.print("InfluxDB Converter write failed: ");
+        Serial.println(influxclient.getLastErrorMessage());
+      }
       Serial.print("Writing Mturb: ");
       Serial.println(Mturb.toLineProtocol());
       if (!influxclient.writePoint(Mturb)) {
@@ -348,7 +360,7 @@ Debug.handle();
     }
   }
   // Upload GPS data
-  if (Settings.influx_write_gps) {
+ /* if (Settings.influx_write_gps) {
     if (timerGPS != 0 && timeOutReached(timerGPS) && WiFi.status() == WL_CONNECTED) {
       timerGPS = millis() + Settings.gps_upload_interval * 100L;
       pause_background_tasks = 1;
@@ -370,7 +382,7 @@ Debug.handle();
       }
       pause_background_tasks = 0;
     }
-  }
+  }*/
   // retry WiFi connection
   if (WiFi.status() != WL_CONNECTED && timeOutReached(nextWifiRetry)) {
     Serial.println("WIFI : Not connected, trying to connect");

@@ -6,7 +6,7 @@
 
 
 void uploadInfluxReadings();
-void uploadGetData();
+//void uploadGetData();
 
 
 extern String httpGet(String path, String query, int port);
@@ -16,10 +16,10 @@ extern Point  Mturb;
 extern SettingsStruct Settings;
 extern readingsStruct readings;
 extern bool inventory_complete;
-extern int nr_of_temp_sensors;
-extern bool inventory_requested;
-extern bool GPS_present;
-extern String inventory;
+//extern int nr_of_temp_sensors;
+//extern bool inventory_requested;
+//extern bool GPS_present;
+//extern String inventory;
 extern AnaValueStruct AnaValue;
 extern SpecialSettingsStruct SpecialSettings; 
 
@@ -53,6 +53,19 @@ void uploadInfluxReadings() {
    // sensor.addField("Yield_yesterday", readings.MPPT_yday); 
     sensor.addField("Yield_total", readings.MPPT_ytot);
   }
+if (readings.Converter_ok && Settings.influx_write_converter) {
+    sensor.addField("Vbat", readings.Converter_Vbatt);
+    sensor.addField("State", readings.Converter_state);
+    sensor.addField("mode", readings.Converter_mode);
+    sensor.addField("Error", readings.Converter_err);
+    sensor.addField("Vac", readings.Converter_OUT_V);
+    sensor.addField("Iac", readings.Converter_OUT_I);
+    sensor.addField("AV", readings.Converter_OUT_AV);
+    sensor.addField("Alarm", readings.Converter_Alarm);
+    sensor.addField("Warning", readings.Converter_Warning); 
+    sensor.addField("OffReason", readings.Converter_OffReason);
+  }
+
 if (Settings.influx_write_mppt) {  
 Mturb.addField("Ubatt2", AnaValue.Ubatt);
 Mturb.addField("Ubal", AnaValue.Ubal);
@@ -84,19 +97,19 @@ Mturb.addField("Wturb",AnaValue.Wturb);
 
 
 
-
+/*
   if (Settings.influx_write_temp) {
     for (int i = 0; i < 10; i++) {
       if (readings.temp[i] != -127) {
         //jps     influx_post("Temp" + String(i), String(readings.temp[i]));
       }
     }
-  }
+  }*/
 }
 
 
 
-
+/*
 void uploadGetData() {
   if (inventory_requested && inventory_complete) {
     addLog(LOG_LEVEL_DEBUG, "DATA : Uploading inventory: " + inventory);
@@ -117,7 +130,7 @@ void uploadGetData() {
       request += "&T" + String(i) + "=" + String(readings.temp[i]);
     }
   }
-
+/*
   if (GPS_present) {
     request += "&GPSdate=" + String(readings.GPS_date);
     request += "&GPStime=" + String(readings.GPS_time);
@@ -128,6 +141,8 @@ void uploadGetData() {
     request += "&GPSfix=" + String(readings.GPS_fix);
     request += "&GPS_geohash=" + String(readings.GPS_geohash);
   }
+  */
+ /*
   String response;
   if (Settings.upload_get_ssl) {
     
@@ -137,4 +152,6 @@ void uploadGetData() {
   }
 
   addLog(LOG_LEVEL_DEBUG, "DATA : Response from server: " + response);
+  
 }
+*/

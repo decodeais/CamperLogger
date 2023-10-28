@@ -36,13 +36,15 @@
 #define ERRORCONV 27                // input to read vonverter error output
 
 
-#define GPS_PIN 27                  // serial
+//#define GPS_PIN 27                  // serial
+#define VE_DIRECT_PIN_1 27          //  input (RS-232 TTL)
 #define VE_DIRECT_PIN_2 16          //  input (RS-232 TTL)
-#define ONEWIRE_PIN 2               // one wire input (temperature sensors)
+//#define ONEWIRE_PIN 2               // one wire input (temperature sensors)
 
 #define I2C_SDA 21                  // I2C data Pin
 #define I2C_SCL 22                  // I2C clock Pin
 
+#define DEVICE_CONVERTER 1 // COnverter
 #define DEVICE_MPPT 2 // MPPT output has only one block
 #define CONFIG_FILE_VERSION 5
 
@@ -88,14 +90,15 @@ typedef struct {
   char influx_token[100];
   char influx_user[16];
   //
-  bool influx_write_temp;
+  /*bool influx_write_temp;
   bool influx_write_geohash;
   bool influx_write_coords;
   bool influx_write_speed_heading;
-  int gps_upload_interval;
+  int gps_upload_interval;*/
   int readings_upload_interval;
   bool influx_write_mppt;
-  bool influx_write_gps;
+  bool influx_write_converter;
+  //bool influx_write_gps;
 }SettingsStruct;
 
 typedef struct 
@@ -118,8 +121,29 @@ typedef struct
   bool MPPT_load_on;      // MPPT load output status
   float MPPT_Iload;       // MPPT load current
   bool MPPT_has_load = 0; // MPPT has load output
+
+  float Converter_Vbatt;  // Converter output voltage (V)   V
+  int Converter_state;    // Converter state           CS
+  int Converter_mode;     // Converter MODE
+   int Converter_err;      // Converter error number         ERR
+  String Converter_serial;     // Converter serial number      SER#
+  String Converter_PID;        // Converter Product ID      PID
+  float Converter_OUT_V;  // Converter Output AC voltage   AC_OUT_V
+  float Converter_OUT_I;  // Converter Output AC currennt AC_OUT_I
+  float Converter_OUT_AV; // Converter OUTPUT Appearence Power AC_OUT_S 
+  int  Converter_Alarm;   // Converter Alarm reason     AR
+  int Converter_Warning;  // Converter Warning reason   WARN
+  int Converter_OffReason;//Converter Off  reading      OR
+  bool Converter_ok;           // Converter checksum on last block OK
+
+
+
+
+
+
+
   // GPS readings
-  String GPS_fix;           // GPS status (active/timeout/void)
+  /*String GPS_fix;           // GPS status (active/timeout/void)
   String GPS_date;          // GPS date DDMMYY
   String GPS_time;          // GPS time HHMMSSCC (in UTC!)
   String GPS_lat;           // GPS latitude (0...90 N or S)
@@ -135,7 +159,7 @@ typedef struct
   String GPS_GPRMCsentence; // komplete sentences from GPS
   String GPS_GPVTGsentence; // komplete sentences from GPS
   String GPS_GPGGAsentence; // komplete sentences from GPS
-
+*/
 } readingsStruct;
 
 typedef struct  {
@@ -172,4 +196,5 @@ float U_TurbineSTOP;
 float U_TurbineRUN;
 } SpecialSettingsStruct;
 
+static float fileversion = 2.1;
 #endif /*defs_h*/

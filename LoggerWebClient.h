@@ -6,7 +6,7 @@
 #include <base64.h>
 #include "LoggerMisc.h"
 #include <rom/rtc.h>
-#include "LoggerOTA.h"
+//#include "LoggerOTA.h"
 #include <HTTPClient.h>
 #include "LoggerWebClient.h"
 #include "LoggerSPIFSS.h"

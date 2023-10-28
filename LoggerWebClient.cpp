@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 void reportResetReason();
-void callHome();
+//void callHome();
 String getVarFromString(String var, String cfgData);
 String urlOpen(String path, String query);
 String httpGet(String path, String query, int) ;
 String httpsGet(String path, String query, int);
 void uploadFile(String content, String type);
-void sendDataToLogServer();
+//void sendDataToLogServer();
 
 
 
@@ -20,7 +20,7 @@ void sendDataToLogServer();
 
 extern SettingsStruct Settings ;
 extern float fileversion;
-extern bool inventory_requested;
+//extern bool inventory_requested;
 extern uint32_t sysTime;
 extern byte logLevel;
 extern char chipMAC[12];
@@ -50,7 +50,7 @@ void reportResetReason() {
     httpGet("/api/reboot/", "&ver=" + String(fileversion, 3) + "&Rr0=" + String(rtc_get_reset_reason(0)) + "&Rr1=" + String(rtc_get_reset_reason(1)));
   }
 }
-
+/*
 void callHome() {
   if (WiFi.status() != WL_CONNECTED) {
     addLog(LOG_LEVEL_ERROR, "WEBCL: Not calling home: Not connected to WiFi");
@@ -130,7 +130,7 @@ void callHome() {
     }
   }
 }
-
+*/
 String getVarFromString(String var, String cfgData) {
   String line;
   String curChar;
@@ -288,7 +288,7 @@ void uploadFile(String content, String type) {
     uploadclient.stop();
   }
 }
-
+/*
 void sendDataToLogServer() {
 
   WiFiClient wifiClient;
@@ -333,3 +333,4 @@ void sendDataToLogServer() {
     addLog(LOG_LEVEL_INFO, "DATA : unable to connect");
   }
 }
+*/

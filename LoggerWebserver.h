@@ -4,7 +4,7 @@
 #include "LoggerMisc.h"
 #include <WebServer.h>
 #include "defs.h"
-#include "LoggerOTA.h"
+//#include "LoggerOTA.h"
 #include "LoggerWiFi.h"
 #include "LoggerSPIFSS.h"
 
@@ -14,7 +14,8 @@ void handle_wificonfig();
 void handle_savewificonfig();
 void handle_root();
 void handle_mppt();
-void handle_sensors();
+void handle_converter();
+//void handle_sensors();
 void handle_cfg();
 void handle_cfgSpecial();
 void handle_savecfg();

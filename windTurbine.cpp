@@ -104,7 +104,7 @@ if ( SpecialSettings.TurbineSTOP == true) // calibration when turbine stopped
 {
 AnaValue.Iturb = Lowpass((AnaValue.ch_4-AnaValue.ch_5/2.0)/1000*I_SCALE_5A, AnaValue.Iturb, ActFilter/10) ; 
 //AnaValue.OffsIbatt = Lowpass(AnaValue.Ibatt,AnaValue.OffsIbatt, OFFS_FILTER); //calibration
-AnaValue.OffsIturb = Lowpass(AnaValue.Iturb,AnaValue.OffsIturb, OFFS_FILTER);
+AnaValue.OffsIturb = Lowpass(AnaValue.Iturb,AnaValue.OffsIturb, 1.0/*OFFS_FILTER*/);
 if (abs(AnaValue.Iturb-AnaValue.OffsIturb) <= 0.005)
 {
   calibration = true;
@@ -117,9 +117,9 @@ else
 }
 debugV("Ibatt : %f",AnaValue.Ibatt);
 debugV("Iturb : %f",AnaValue.Iturb);
-AnaValue.Ubal = AnaValue.OffsIturb;
+// AnaValue.Ubal = AnaValue.OffsIturb;
 //I=(AnaValue.Ibatt - AnaValue.Iturb)/2.0-0.22;
-debugV("Iturb : %f",AnaValue.Iturb);
+//debugV("Iturb : %f",AnaValue.Iturb);
 debugV("OffsIturb : %f",AnaValue.OffsIturb);
 I = -(AnaValue.Iturb - AnaValue.OffsIturb);
 if ( I < 0.0 ) 
@@ -164,6 +164,7 @@ ErrorConverter = digitalRead(ERRORCONV) ;
 
 void control()
 {
+  extern RemoteDebug Debug;
   if (calibration)   // run turbine only if current is calibrated
   {
     if (SpecialSettings.TurbineAuto )
@@ -172,8 +173,10 @@ void control()
       {
       SpecialSettings.TurbineSTOP = false;
       }
-      if (AnaValue.Uturb > SpecialSettings.U_TurbineSTOP )
+      if (AnaValue.Uturb <32.0/*Spikes*/ and AnaValue.Uturb > SpecialSettings.U_TurbineSTOP )
       {
+        debugW("!!!!!!!!!!!!!!!!!!!!!!Stop : %f",AnaValue.Uturb);
+
       SpecialSettings.TurbineSTOP = true;
       calibration = false; // turbine stop is chance for recalibration
       }

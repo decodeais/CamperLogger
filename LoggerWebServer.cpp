@@ -6,6 +6,8 @@ extern SecurityStruct SecuritySettings;
 extern SettingsStruct Settings;
 extern bool MPPT_present;
 extern String lastBlockMPPT;
+extern bool Converter_present;
+extern String lastBlockConverter;
 extern SettingsStruct settings;
 extern readingsStruct readings;
 extern unsigned long timerAPoff;
@@ -38,6 +40,7 @@ pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size:
 <a href='/cfg'>Settings</a>\
 <a href='/cfgSpecial'>Special</a>\
 <a href='/mppt'>MPPT</a>\
+<a href='/converter'>Converter</a>\
 <a href='/sensors'>Sensors</a>\
 <hr>";
 //"<html><head><title>Camper Control</title><style>body {font-family: verdana;background-color: white; color: black;font-size: 40px;}td,th{font-size: 40px;text-align:left;}input[type=checkbox]{padding:2px;transform:scale(3);}input[type=password],select,input[type=submit],input[type=text],input[type=number]{-webkit-appearance: none;-moz-appearance: none; display: block;margin: 0;width: 100%;height: 56px;line-height: 40px;font-size: 40px;border: 1px solid #bbb;}a, a.vsited {font-size: 15px;text-decoration: none;color: #ffffff;background-color: #005ca9;padding: 10px;display: inline-block;border: 1px solid black;border-radius: 10px;text-transform: uppercase;font-weight: bold;}pre {display: block;background-color: #f0f0f0;border: 1px solid black;font-size: 17px;}</style><meta name='apple-mobile-web-app-capable' content='yes'><meta name='viewport' content='user-scalable=no, initial-scale=.5 width=device-width'><meta charset='UTF-8'><meta http-equiv='refresh' content='5' /></head><body><p><a href='/'>Home</a><a href='/wifi'>WiFi config</a><a href='/cfg'>Settings</a><a href='/mppt'>MPPT</a><a href='/sensors'>Sensors</a><hr>";
@@ -51,8 +54,9 @@ void WebServerInit() {
   // Prepare webserver pages
   Webserver.on("/", handle_root);
   Webserver.on("/mppt", handle_mppt);
+  Webserver.on("/converter", handle_converter);
   Webserver.on("/sensors", handle_measure);
-  Webserver.on("/measure", handle_sensors);
+  //Webserver.on("/measure", handle_sensors);
   Webserver.on("/wifi", handle_wificonfig);
   Webserver.on("/savewifi", handle_savewificonfig);
   Webserver.on("/cfg", handle_cfg);
@@ -63,7 +67,7 @@ void WebServerInit() {
   Webserver.on("/reset", ResetFactory);
   Webserver.on("/resCount", ResetCounter);
   
-  Webserver.on("/ota", OTA);
+  //Webserver.on("/ota", OTA);
 
   Webserver.onNotFound(handle_notfound);
 
@@ -182,6 +186,25 @@ void handle_mppt() {
   statusLED(false);
 }
 
+void handle_converter() {
+  statusLED(true);
+  addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /mppt"));
+  String content;
+  content = html_head_refresh;
+  if (Converter_present) {
+    content += "Last Converter readings:\n";
+    content += "<pre>\n";
+    content += lastBlockConverter;
+    content += "</pre>";
+  } else {
+    content += "No Converter present";
+  }
+  Webserver.send(200, "text/html", content);
+  if (timerAPoff != 0)
+    timerAPoff = millis() + 10000L;
+  statusLED(false);
+}
+
 
 void handle_measure() {
   statusLED(true);
@@ -218,7 +241,7 @@ content += "Last Measurements:\n";
     timerAPoff = millis() + 10000L;
   statusLED(false);
 }
-
+/*
 void handle_sensors() {
   statusLED(true);
   addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /sensors"));
@@ -230,6 +253,7 @@ void handle_sensors() {
       content += "Sensor " + String(i) + ": " + String(readings.temp[i]) + "&deg;C<br>";
     }
   }
+
   content += "<h2>GPS:</h2>";
 
   content += "gps:";
@@ -250,7 +274,7 @@ void handle_sensors() {
     timerAPoff = millis() + 10000L;
   statusLED(false);
 }
-
+*/
 void handle_cfg() {
   statusLED(true);
   addLog(LOG_LEVEL_DEBUG, F("WEB  : Incoming request for /cfg"));
@@ -282,11 +306,17 @@ content += "<tr><td>MPPT</td><td><input type=\"checkbox\"";
   if (Settings.influx_write_mppt)
     content += " checked";
 content += " name=\"idb_mppt\" value=\"1\"></td></tr>";
-content += "<tr><td>GPS</td><td><input type=\"checkbox\"";
+
+content += "<tr><td>Converter</td><td><input type=\"checkbox\"";
+  if (Settings.influx_write_converter)
+    content += " checked";
+content += " name=\"idb_converter\" value=\"1\"></td></tr>";
+
+/* content += "<tr><td>GPS</td><td><input type=\"checkbox\"";
   if (Settings.influx_write_gps)
     content += " checked";
 content += " name=\"idb_gps\" value=\"1\"></td></tr>";
-
+*/
   /*  
   content += "<tr><td>Temperatures</td><td><input type=\"checkbox\"";
   if (Settings.influx_write_temp)
@@ -308,7 +338,7 @@ content += " name=\"idb_gps\" value=\"1\"></td></tr>";
     content += " checked";
   content += " name=\"idb_speed\" value=\"1\"></td></tr>";
 */
-  content += "<tr><td>&nbsp;</td><td></td></tr>";
+/*  content += "<tr><td>&nbsp;</td><td></td></tr>";
   content += "<tr><th>HTTP GET:</th><th></th></tr>";
 
   content += "<tr><td>Write data</td><td><input type=\"checkbox\"";
@@ -323,12 +353,12 @@ content += " name=\"idb_gps\" value=\"1\"></td></tr>";
   if (Settings.upload_get_ssl)
     content += " checked";
   content += " name=\"get_ssl\" value=\"1\"></td></tr>";
-
+*/
   content += "<tr><td>&nbsp;</td><td></td></tr>";
   content += "<tr><th>Intervals</th><th></th></tr>";
 
   content += "<tr><td>Upload interval</td><td><input type=\"number\" name=\"idb_interval\" value=\"" + String(Settings.readings_upload_interval) + "\"></td></tr>";
-  content += "<tr><td>GPS upload interval</td><td><input type=\"number\" name=\"gps_interval\" value=\"" + String(Settings.gps_upload_interval) + "\"></td></tr>";
+ // content += "<tr><td>GPS upload interval</td><td><input type=\"number\" name=\"gps_interval\" value=\"" + String(Settings.gps_upload_interval) + "\"></td></tr>";
 
   content += "<tr><td colspan=\"2\"><input type=\"submit\" value=\"Save settings\"></td></tr>";
   content += "</table></form></html>";
@@ -346,14 +376,15 @@ void handle_savecfg() {
   Settings.influx_ssl = 0;
   Settings.upload_get = 0;
   Settings.upload_get_ssl = 0;
-  Settings.influx_write_geohash = 0;
-  Settings.influx_write_coords = 0;
-  Settings.influx_write_speed_heading = 0;
+ // Settings.influx_write_geohash = 0;
+ // Settings.influx_write_coords = 0;
+ // Settings.influx_write_speed_heading = 0;
   
   Settings.upload_influx = 0;
   Settings.influx_write_mppt = 0;
-  Settings.influx_write_gps = 0;
-  Settings.influx_write_temp = 0;
+  Settings.influx_write_converter = 0;
+  //Settings.influx_write_gps = 0;
+  //Settings.influx_write_temp = 0;
 
   for (int i = 0; i < Webserver.args(); i++) {
     if (Webserver.argName(i) == "get_enabled" && Webserver.arg(i) == "1") {
@@ -368,10 +399,13 @@ void handle_savecfg() {
     if (Webserver.argName(i) == "idb_mppt" && Webserver.arg(i) == "1") {
       Settings.influx_write_mppt = 1;
     }
-    if (Webserver.argName(i) == "idb_gps" && Webserver.arg(i) == "1") {
-      Settings.influx_write_gps = 1;
+     if (Webserver.argName(i) == "idb_converter" && Webserver.arg(i) == "1") {
+      Settings.influx_write_converter = 1;
     }
-      if (Webserver.argName(i) == "idb_temp" && Webserver.arg(i) == "1") {
+    /*if (Webserver.argName(i) == "idb_gps" && Webserver.arg(i) == "1") {
+      Settings.influx_write_gps = 1;
+    }*/
+     /* if (Webserver.argName(i) == "idb_temp" && Webserver.arg(i) == "1") {
         Settings.influx_write_temp = 1;
       }
       if (Webserver.argName(i) == "idb_geohash" && Webserver.arg(i) == "1") {
@@ -382,7 +416,7 @@ void handle_savecfg() {
       }
       if (Webserver.argName(i) == "idb_speed" && Webserver.arg(i) == "1") {
         Settings.influx_write_speed_heading = 1;
-      }
+      }*/
       if (Webserver.argName(i) == "get_ssl" && Webserver.arg(i) == "1") {
         Settings.upload_get_ssl = 1;
       }
@@ -407,9 +441,9 @@ void handle_savecfg() {
       if (Webserver.argName(i) == "get_port") {
         Settings.upload_get_port = Webserver.arg(i).toInt();
       }
-      if (Webserver.argName(i) == "gps_interval") {
+      /*if (Webserver.argName(i) == "gps_interval") {
         Settings.gps_upload_interval = Webserver.arg(i).toInt();
-      }
+      }*/
       if (Webserver.argName(i) == "idb_interval") {
         Settings.readings_upload_interval = Webserver.arg(i).toInt();
       }
@@ -437,6 +471,7 @@ void handle_savecfg() {
     content += "\"PID\":\"" + String(readings.MPPT_PID) + "\",";
     content += "\"serial\":\"" + String(readings.MPPT_serial) + "\"";
     content += "},";
+    /*
     content += "\"gps\":{";
     content += "\"fix\":\"" + String(readings.GPS_fix) + "\",";
     content += "\"date\":\"" + String(readings.GPS_date) + "\",";
@@ -459,7 +494,9 @@ void handle_savecfg() {
     }
     if (tempsensorcount > 0) {
       content = content.substring(0, content.length() - 1);
+
     }
+    */
     content += "}";
     content += "}";
     Webserver.send(200, "application/json", content);

@@ -9,7 +9,9 @@
 #include <base64.h>
 
 void readVEdirect(int device);
+void readVEdirect_Converter();
 void parseMPPT(String line);
+void parseConverter(String line);
 byte calcChecksum(String input);
 
 

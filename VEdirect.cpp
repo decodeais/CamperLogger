@@ -1,12 +1,15 @@
 
 #include "VEdirect.h"
 #include "RemoteDebug.h"        //https://github.com/JoaoLopesF/RemoteDebug
-extern HardwareSerial SerialVE;
+extern HardwareSerial Serial_VE_MPPT;
+extern HardwareSerial Serial_VE_Converter;
 extern bool MPPT_present;
+extern bool Converter_present;
 extern RemoteDebug Debug;
 extern readingsStruct readings;
 
 String lastBlockMPPT = "";
+String lastBlockConverter = "";
 
 byte calcChecksum(String input) {
   uint8_t checksum = 0;
@@ -29,6 +32,10 @@ void readVEdirect(int device)
   {
     devicename = "MPPT";
   }
+  /*if (device == DEVICE_CONVERTER)
+  {
+    devicename = "CONVERTER";
+  }*/
   unsigned long vedirect_timeout = millis() + 4000L;
   // We get a block every second. However, a BMV sends different odd and even blocks.
   // This means it may take a little over two seconds to get to the block we want.
@@ -36,10 +43,10 @@ void readVEdirect(int device)
   while (!block_end && !timeOutReached(vedirect_timeout))
   {
     vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
-    while (SerialVE.available() > 0 && !timeOutReached(vedirect_timeout))
+    while (Serial_VE_MPPT.available() > 0 && !timeOutReached(vedirect_timeout))
     {
       vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
-      character = SerialVE.read();
+      character = Serial_VE_MPPT.read();
       line += character;
       if (character == '\n')
       {
@@ -65,7 +72,13 @@ void readVEdirect(int device)
             parseMPPT(line);
             debugV("%s /n",line);
           }
-
+/*
+          if (device == DEVICE_CONVERTER)
+          {
+            parseConverter(line);
+            debugV("%s /n",line);
+          }
+*/
           // checksum validation
           if (line.startsWith("Checksum"))
           {
@@ -82,6 +95,16 @@ void readVEdirect(int device)
                 //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
                 debugI("VICTR: Checksum OK reading %s" , devicename);
               }
+              /*
+              if (device == DEVICE_CONVERTER)
+              {
+                lastBlockConverter = thisBlock;
+                Converter_present = 1;
+                readings.Converter_Vbatt = 1;
+                //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                debugI("VICTR: Checksum OK reading %s" , devicename);
+              }
+*/
 
               return;
             }
@@ -110,6 +133,110 @@ void readVEdirect(int device)
     return;
   }
 }
+
+
+void readVEdirect_Converter()
+{
+  String thisBlock;
+  char character;
+  String line = "";
+  bool block_end = 0;
+  bool in_block = 0;
+  String devicename = "CONVERTER";
+
+  /*if (device == DEVICE_MPPT)
+  {*/
+  //  devicename = "MPPT";
+  //
+  /*if (device == DEVICE_CONVERTER)
+  {
+    devicename = "CONVERTER";
+  }*/
+  unsigned long vedirect_timeout = millis() + 4000L;
+  // We get a block every second. However, a BMV sends different odd and even blocks.
+  // This means it may take a little over two seconds to get to the block we want.
+
+  while (!block_end && !timeOutReached(vedirect_timeout))
+  {
+    vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
+    while (Serial_VE_Converter.available() > 0 && !timeOutReached(vedirect_timeout))
+    {
+      vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
+      character = Serial_VE_Converter.read();
+      line += character;
+      if (character == '\n')
+      {
+        digitalWrite(PIN_EXT_LED, HIGH);
+        // line received. Not sure if it is complete yet
+        if (line.startsWith("PID"))
+        { // second part of BMV block starts with H1
+          in_block = 1;
+        }
+        if (!in_block)
+        {
+          // received a line, but we are not in a block and the line does not start with PID. Ignore.
+          line = "";
+        }
+        else
+        {
+          vTaskDelay(10 / portTICK_PERIOD_MS);
+          thisBlock += line;
+          line.remove(line.length() - 2); // remove <CRLF>
+
+          //if (device == DEVICE_MPPT)
+          //
+            parseConverter(line);
+            debugV("%s /n",line);
+          //}
+
+          // checksum validation
+          if (line.startsWith("Checksum"))
+          {
+            // End of block
+            block_end = 1;
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            if (calcChecksum(thisBlock) == 0)
+            { // checksum should always be 0
+              //if (device == DEVICE_MPPT)
+              //{
+                lastBlockConverter = thisBlock;
+                Converter_present = 1;
+                readings.Converter_ok = 1;
+                //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                debugI("VICTR: Checksum OK reading %s" , devicename);
+              //}
+
+
+              return;
+            }
+            else
+            {
+             // if (device == DEVICE_MPPT)
+             // {
+               readings.MPPT_ok = 0;
+                //JPSaddLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
+                debugI("VICTR: Checksum error reading %s " , devicename);
+                lastBlockConverter = thisBlock + "Invalid checksum BMV block 1";
+              //}
+            }
+          }
+        }
+        line = "";
+        digitalWrite(PIN_EXT_LED, LOW);
+      }
+    }
+  }
+  if (!block_end)
+  {
+    // timeout reading MPPT or at least end of block not found
+    //JPS addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
+    debugI( "VICTR: Timeout reading VE.direct " , devicename);
+    return;
+  }
+}
+
+
+
 
 void parseMPPT(String line)
 {
@@ -197,6 +324,107 @@ void parseMPPT(String line)
   {
     readings.MPPT_load_on = 1;
   }
+}
+
+/********************************************************************************/
+/* Phoenix Inverter
+ID	0xA2F2
+FW	0124
+SER#	HQ2137DC346
+MODE	2
+CS	9
+AC_OUT_V	22995
+AC_OUT_I	1
+AC_OUT_S	24
+V	26761
+AR	0
+WARN	0
+OR	0x00000000
+Checksum	
+*/
+/********************************************************************************/
+
+void parseConverter(String line)
+{
+  // Converter output (battery) voltage
+  if (line.startsWith("V\t"))
+  {
+    readings.Converter_Vbatt = line.substring(2).toFloat() / 1000;
+    
+  }
+
+  // Converter State 
+  if (line.startsWith("CS\t"))
+  {
+    readings.Converter_state = line.substring(4).toInt();
+  }
+
+  // Converter Mode
+  if (line.startsWith("MODE\t"))
+  {
+    readings.Converter_mode = line.substring(4).toInt();
+  }
+  // Converter Mode
+  if (line.startsWith("ERR\t"))
+  {
+    readings.Converter_err = line.substring(4).toInt();
+  }
+   // Converter serial number
+  if (line.startsWith("SER#\t"))
+  {
+    readings.Converter_serial = line.substring(5);
+  }
+  // Converter Product ID
+  if (line.startsWith("PID\t"))
+  {
+    readings.Converter_PID = line.substring(4);
+  }
+
+  // Converter Output AC voltage
+  if (line.startsWith("AC_OUT_V\t"))
+  {
+    readings.Converter_OUT_V = line.substring(4).toFloat() / 100;
+  }
+
+  // Converter Output AC current
+  if (line.startsWith("AC_OUT_I\t"))
+  {
+    readings.Converter_OUT_I = line.substring(4).toFloat() / 10;
+  }
+
+  // Converter OUTPUT Appearence Power
+  if (line.startsWith("AC_OUT_S\t"))
+  {
+    readings.Converter_OUT_AV = line.substring(4).toInt();
+  }
+
+  // Converter Alarm reason
+  if (line.startsWith("AR\t"))
+  {
+    readings.Converter_Alarm = line.substring(4).toInt();
+  }
+
+// Converter Warning reason 
+  if (line.startsWith("WARN\t"))
+  {
+    readings.Converter_Warning = line.substring(4).toInt();
+  }
+
+ // Converter Converter Off reason 
+  if (line.startsWith("WARN\t"))
+  {
+    readings.Converter_OffReason = line.substring(4).toInt();
+  }
+
+
+  
+
+   
+ 
+ 
+
+  
+
 }
 
 String getVictronDeviceByPID(String PID)
