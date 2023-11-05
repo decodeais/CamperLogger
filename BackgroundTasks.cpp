@@ -53,7 +53,7 @@ void runBackgroundTasks() {
   
  // Read Victron MPPT charge controller
   if (read_ve_direct_mppt) {
-    Serial_VE_MPPT.begin(19200, SERIAL_8N1, VE_DIRECT_PIN_2, /*jps(int8_t)*/1, false);
+    Serial_VE_MPPT.begin(19200, SERIAL_8N1, VE_DIRECT_PIN_2, /*jps(int8_t)*/1, true);
    
     
     vTaskDelay(10 / portTICK_PERIOD_MS);

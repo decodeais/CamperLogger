@@ -54,16 +54,16 @@ void uploadInfluxReadings() {
     sensor.addField("Yield_total", readings.MPPT_ytot);
   }
 if (readings.Converter_ok && Settings.influx_write_converter) {
-    sensor.addField("Vbat", readings.Converter_Vbatt);
-    sensor.addField("State", readings.Converter_state);
-    sensor.addField("mode", readings.Converter_mode);
-    sensor.addField("Error", readings.Converter_err);
-    sensor.addField("Vac", readings.Converter_OUT_V);
-    sensor.addField("Iac", readings.Converter_OUT_I);
-    sensor.addField("AV", readings.Converter_OUT_AV);
-    sensor.addField("Alarm", readings.Converter_Alarm);
-    sensor.addField("Warning", readings.Converter_Warning); 
-    sensor.addField("OffReason", readings.Converter_OffReason);
+    sensor.addField("Vbat_conv", readings.Converter_Vbatt);
+    sensor.addField("State_conv", readings.Converter_state);
+    sensor.addField("mode_conv", readings.Converter_mode);
+    sensor.addField("Error_conv", readings.Converter_err);
+    sensor.addField("Vac_conv", readings.Converter_OUT_V);
+    sensor.addField("Iac_conv", readings.Converter_OUT_I);
+    sensor.addField("AV_conv", readings.Converter_OUT_AV);
+    sensor.addField("Alarm_conv", readings.Converter_Alarm);
+    sensor.addField("Warning_conv", readings.Converter_Warning); 
+    sensor.addField("OffReason_conv", readings.Converter_OffReason);
   }
 
 if (Settings.influx_write_mppt) {  

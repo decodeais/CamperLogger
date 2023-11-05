@@ -130,7 +130,8 @@ void readVEdirect(int device)
     // timeout reading MPPT or at least end of block not found
     //JPS addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
     debugI( "VICTR: Timeout reading VE.direct " , devicename);
-    return;
+    MPPT_present = 0;
+    
   }
 }
 
@@ -231,6 +232,7 @@ void readVEdirect_Converter()
     // timeout reading MPPT or at least end of block not found
     //JPS addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
     debugI( "VICTR: Timeout reading VE.direct " , devicename);
+    Converter_present = 0;
     return;
   }
 }
@@ -356,13 +358,13 @@ void parseConverter(String line)
   // Converter State 
   if (line.startsWith("CS\t"))
   {
-    readings.Converter_state = line.substring(4).toInt();
+    readings.Converter_state = line.substring(3).toInt();
   }
 
   // Converter Mode
   if (line.startsWith("MODE\t"))
   {
-    readings.Converter_mode = line.substring(4).toInt();
+    readings.Converter_mode = line.substring(5).toInt();
   }
   // Converter Mode
   if (line.startsWith("ERR\t"))
@@ -383,37 +385,37 @@ void parseConverter(String line)
   // Converter Output AC voltage
   if (line.startsWith("AC_OUT_V\t"))
   {
-    readings.Converter_OUT_V = line.substring(4).toFloat() / 100;
+    readings.Converter_OUT_V = line.substring(9).toFloat() / 100;
   }
 
   // Converter Output AC current
   if (line.startsWith("AC_OUT_I\t"))
   {
-    readings.Converter_OUT_I = line.substring(4).toFloat() / 10;
+    readings.Converter_OUT_I = line.substring(9).toFloat() / 10;
   }
 
   // Converter OUTPUT Appearence Power
   if (line.startsWith("AC_OUT_S\t"))
   {
-    readings.Converter_OUT_AV = line.substring(4).toInt();
+    readings.Converter_OUT_AV = line.substring(9).toInt();
   }
 
   // Converter Alarm reason
   if (line.startsWith("AR\t"))
   {
-    readings.Converter_Alarm = line.substring(4).toInt();
+    readings.Converter_Alarm = line.substring(3).toInt();
   }
 
 // Converter Warning reason 
   if (line.startsWith("WARN\t"))
   {
-    readings.Converter_Warning = line.substring(4).toInt();
+    readings.Converter_Warning = line.substring(5).toInt();
   }
 
  // Converter Converter Off reason 
-  if (line.startsWith("WARN\t"))
+  if (line.startsWith("OR\t"))
   {
-    readings.Converter_OffReason = line.substring(4).toInt();
+    readings.Converter_OffReason = line.substring(3).toInt();
   }
 
 
