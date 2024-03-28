@@ -1,0 +1,521 @@
+
+#include "VEdirect.h"
+#include "RemoteDebug.h"        //https://github.com/JoaoLopesF/RemoteDebug
+extern HardwareSerial Serial_VE_MPPT;
+extern HardwareSerial Serial_VE_Converter;
+extern bool MPPT_present;
+extern bool Converter_present;
+extern RemoteDebug Debug;
+extern readingsStruct readings;
+
+String lastBlockMPPT = "";
+String lastBlockConverter = "";
+
+byte calcChecksum(String input) {
+  uint8_t checksum = 0;
+  for (int i = 0; i < input.length(); i++) {
+    checksum += input.charAt(i);
+  }
+  return (checksum);
+}
+
+void readVEdirect(int device)
+{
+  String thisBlock;
+  char character;
+  String line = "";
+  bool block_end = 0;
+  bool in_block = 0;
+  String devicename;
+
+  if (device == DEVICE_MPPT)
+  {
+    devicename = "MPPT";
+  }
+  /*if (device == DEVICE_CONVERTER)
+  {
+    devicename = "CONVERTER";
+  }*/
+  unsigned long vedirect_timeout = millis() + 4000L;
+  // We get a block every second. However, a BMV sends different odd and even blocks.
+  // This means it may take a little over two seconds to get to the block we want.
+
+  while (!block_end && !timeOutReached(vedirect_timeout))
+  {
+    vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
+    while (Serial_VE_MPPT.available() > 0 && !timeOutReached(vedirect_timeout))
+    {
+      vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
+      character = Serial_VE_MPPT.read();
+      line += character;
+      if (character == '\n')
+      {
+        digitalWrite(PIN_EXT_LED, HIGH);
+        // line received. Not sure if it is complete yet
+        if (line.startsWith("PID"))
+        { // second part of BMV block starts with H1
+          in_block = 1;
+        }
+        if (!in_block)
+        {
+          // received a line, but we are not in a block and the line does not start with PID. Ignore.
+          line = "";
+        }
+        else
+        {
+          vTaskDelay(10 / portTICK_PERIOD_MS);
+          thisBlock += line;
+          line.remove(line.length() - 2); // remove <CRLF>
+
+          if (device == DEVICE_MPPT)
+          {
+            parseMPPT(line);
+            debugV("%s /n",line);
+          }
+/*
+          if (device == DEVICE_CONVERTER)
+          {
+            parseConverter(line);
+            debugV("%s /n",line);
+          }
+*/
+          // checksum validation
+          if (line.startsWith("Checksum"))
+          {
+            // End of block
+            block_end = 1;
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            if (calcChecksum(thisBlock) == 0)
+            { // checksum should always be 0
+              if (device == DEVICE_MPPT)
+              {
+                lastBlockMPPT = thisBlock;
+                MPPT_present = 1;
+                readings.MPPT_ok = 1;
+                //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                debugI("VICTR: Checksum OK reading %s" , devicename);
+              }
+              /*
+              if (device == DEVICE_CONVERTER)
+              {
+                lastBlockConverter = thisBlock;
+                Converter_present = 1;
+                readings.Converter_Vbatt = 1;
+                //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                debugI("VICTR: Checksum OK reading %s" , devicename);
+              }
+*/
+
+              return;
+            }
+            else
+            {
+              if (device == DEVICE_MPPT)
+              {
+               readings.MPPT_ok = 0;
+                //JPSaddLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
+                debugI("VICTR: Checksum error reading %s " , devicename);
+                lastBlockMPPT = thisBlock + "Invalid checksum BMV block 1";
+              }
+            }
+          }
+        }
+        line = "";
+        digitalWrite(PIN_EXT_LED, LOW);
+      }
+    }
+  }
+  if (!block_end)
+  {
+    // timeout reading MPPT or at least end of block not found
+    //JPS addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
+    debugI( "VICTR: Timeout reading VE.direct " , devicename);
+    MPPT_present = 0;
+    
+  }
+}
+
+
+void readVEdirect_Converter()
+{
+  String thisBlock;
+  char character;
+  String line = "";
+  bool block_end = 0;
+  bool in_block = 0;
+  String devicename = "CONVERTER";
+
+  /*if (device == DEVICE_MPPT)
+  {*/
+  //  devicename = "MPPT";
+  //
+  /*if (device == DEVICE_CONVERTER)
+  {
+    devicename = "CONVERTER";
+  }*/
+  unsigned long vedirect_timeout = millis() + 4000L;
+  // We get a block every second. However, a BMV sends different odd and even blocks.
+  // This means it may take a little over two seconds to get to the block we want.
+
+  while (!block_end && !timeOutReached(vedirect_timeout))
+  {
+    vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
+    while (Serial_VE_Converter.available() > 0 && !timeOutReached(vedirect_timeout))
+    {
+      vTaskDelay(10 / portTICK_PERIOD_MS); // needed to keep WDT from resetting the ESP
+      character = Serial_VE_Converter.read();
+      line += character;
+      if (character == '\n')
+      {
+        digitalWrite(PIN_EXT_LED, HIGH);
+        // line received. Not sure if it is complete yet
+        if (line.startsWith("PID"))
+        { // second part of BMV block starts with H1
+          in_block = 1;
+        }
+        if (!in_block)
+        {
+          // received a line, but we are not in a block and the line does not start with PID. Ignore.
+          line = "";
+        }
+        else
+        {
+          vTaskDelay(10 / portTICK_PERIOD_MS);
+          thisBlock += line;
+          line.remove(line.length() - 2); // remove <CRLF>
+
+          //if (device == DEVICE_MPPT)
+          //
+            parseConverter(line);
+            debugV("%s /n",line);
+          //}
+
+          // checksum validation
+          if (line.startsWith("Checksum"))
+          {
+            // End of block
+            block_end = 1;
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            if (calcChecksum(thisBlock) == 0)
+            { // checksum should always be 0
+              //if (device == DEVICE_MPPT)
+              //{
+                lastBlockConverter = thisBlock;
+                Converter_present = 1;
+                readings.Converter_ok = 1;
+                //JPSaddLog(LOG_LEVEL_INFO, "VICTR: Checksum OK reading " + devicename);
+                debugI("VICTR: Checksum OK reading %s" , devicename);
+              //}
+
+
+              return;
+            }
+            else
+            {
+             // if (device == DEVICE_MPPT)
+             // {
+               readings.MPPT_ok = 0;
+                //JPSaddLog(LOG_LEVEL_ERROR, "VICTR: Checksum error reading " + devicename);
+                debugI("VICTR: Checksum error reading %s " , devicename);
+                lastBlockConverter = thisBlock + "Invalid checksum BMV block 1";
+              //}
+            }
+          }
+        }
+        line = "";
+        digitalWrite(PIN_EXT_LED, LOW);
+      }
+    }
+  }
+  if (!block_end)
+  {
+    // timeout reading MPPT or at least end of block not found
+    //JPS addLog(LOG_LEVEL_ERROR, "VICTR: Timeout reading VE.direct " + devicename);
+    debugI( "VICTR: Timeout reading VE.direct " , devicename);
+    Converter_present = 0;
+    return;
+  }
+}
+
+
+
+
+void parseMPPT(String line)
+{
+  // MPPT output (battery) voltage
+  if (line.startsWith("V\t"))
+  {
+    readings.MPPT_Vbatt = line.substring(2).toFloat() / 1000;
+    if (readings.MPPT_Vbatt > 3)
+    {
+    }
+  }
+
+  // MPPT output (battery) current
+  if (line.startsWith("I\t"))
+  {
+    readings.MPPT_Ibatt = line.substring(2).toFloat() / 1000;
+  }
+
+  // MPTT input (PV) voltage
+  if (line.startsWith("VPV\t"))
+  {
+    readings.MPPT_Vpv = line.substring(4).toFloat() / 1000;
+  }
+
+  // MPPT input (PV) power
+  if (line.startsWith("PPV\t"))
+  {
+    readings.MPPT_Ppv = line.substring(4).toInt();
+  }
+
+  // MPPT max power today
+  if (line.startsWith("H21\t"))
+  {
+    readings.MPPT_Pmax = line.substring(4).toInt();
+  }
+
+  // MPPT PV yield today
+  if (line.startsWith("H20\t"))
+  {
+    readings.MPPT_yday = line.substring(4).toFloat() / 100;
+  }
+
+  // MPPT PV yield total
+  if (line.startsWith("H19\t"))
+  {
+    readings.MPPT_ytot = line.substring(4).toFloat() / 100;
+  }
+
+  // MPPT error number
+  if (line.startsWith("ERR\t"))
+  {
+    readings.MPPT_err = line.substring(4).toInt();
+  }
+
+  // MPPT charge state
+  if (line.startsWith("CS\t"))
+  {
+    readings.MPPT_state = line.substring(3).toInt();
+  }
+
+  // MPPT Product ID
+  if (line.startsWith("PID\t"))
+  {
+    readings.MPPT_PID = line.substring(4);
+  }
+
+  // MPPT serial number
+  if (line.startsWith("SER#\t"))
+  {
+    readings.MPPT_serial = line.substring(5);
+  }
+  // MPPT load current
+  if (line.startsWith("IL\t"))
+  {
+    readings.MPPT_Iload = line.substring(3).toFloat() / 1000;
+    readings.MPPT_has_load = 1;
+  }
+  // MPPT load status
+  if (line.startsWith("LOAD\t"))
+  {
+    readings.MPPT_load_on = 0;
+    readings.MPPT_has_load = 1;
+  }
+  if (line.startsWith("LOAD\tON"))
+  {
+    readings.MPPT_load_on = 1;
+  }
+}
+
+/********************************************************************************/
+/* Phoenix Inverter
+ID	0xA2F2
+FW	0124
+SER#	HQ2137DC346
+MODE	2
+CS	9
+AC_OUT_V	22995
+AC_OUT_I	1
+AC_OUT_S	24
+V	26761
+AR	0
+WARN	0
+OR	0x00000000
+Checksum	
+*/
+/********************************************************************************/
+
+void parseConverter(String line)
+{
+  // Converter output (battery) voltage
+  if (line.startsWith("V\t"))
+  {
+    readings.Converter_Vbatt = line.substring(2).toFloat() / 1000;
+    
+  }
+
+  // Converter State 
+  if (line.startsWith("CS\t"))
+  {
+    readings.Converter_state = line.substring(3).toInt();
+  }
+
+  // Converter Mode
+  if (line.startsWith("MODE\t"))
+  {
+    readings.Converter_mode = line.substring(5).toInt();
+  }
+  // Converter Mode
+  if (line.startsWith("ERR\t"))
+  {
+    readings.Converter_err = line.substring(4).toInt();
+  }
+   // Converter serial number
+  if (line.startsWith("SER#\t"))
+  {
+    readings.Converter_serial = line.substring(5);
+  }
+  // Converter Product ID
+  if (line.startsWith("PID\t"))
+  {
+    readings.Converter_PID = line.substring(4);
+  }
+
+  // Converter Output AC voltage
+  if (line.startsWith("AC_OUT_V\t"))
+  {
+    readings.Converter_OUT_V = line.substring(9).toFloat() / 100;
+  }
+
+  // Converter Output AC current
+  if (line.startsWith("AC_OUT_I\t"))
+  {
+    readings.Converter_OUT_I = line.substring(9).toFloat() / 10;
+  }
+
+  // Converter OUTPUT Appearence Power
+  if (line.startsWith("AC_OUT_S\t"))
+  {
+    readings.Converter_OUT_AV = line.substring(9).toInt();
+  }
+
+  // Converter Alarm reason
+  if (line.startsWith("AR\t"))
+  {
+    readings.Converter_Alarm = line.substring(3).toInt();
+  }
+
+// Converter Warning reason 
+  if (line.startsWith("WARN\t"))
+  {
+    readings.Converter_Warning = line.substring(5).toInt();
+  }
+
+ // Converter Converter Off reason 
+  if (line.startsWith("OR\t"))
+  {
+    readings.Converter_OffReason = line.substring(3).toInt();
+  }
+
+
+  
+
+   
+ 
+ 
+
+  
+
+}
+
+String getVictronDeviceByPID(String PID)
+{
+  String device = "";
+  if (PID == "0x203")
+    device = "BMV-700";
+  if (PID == "0x204")
+    device = "BMV-702";
+  if (PID == "0x205")
+    device = "BMV-700H";
+  if (PID == "0x0300")
+    device = "BlueSolar MPPT 70|15";
+  if (PID == "0xA040")
+    device = "BlueSolar MPPT 75|50";
+  if (PID == "0xA041")
+    device = "BlueSolar MPPT 150|35";
+  if (PID == "0xA042")
+    device = "BlueSolar MPPT 75|15";
+  if (PID == "0xA043")
+    device = "BlueSolar MPPT 100|15";
+  if (PID == "0xA044")
+    device = "BlueSolar MPPT 100|30";
+  if (PID == "0xA045")
+    device = "BlueSolar MPPT 100|50";
+  if (PID == "0xA046")
+    device = "BlueSolar MPPT 150|70";
+  if (PID == "0xA047")
+    device = "BlueSolar MPPT 150|100";
+  if (PID == "0xA048")
+    device = "Unknown";
+  if (PID == "0xA049")
+    device = "BlueSolar MPPT 100|50 rev2";
+  if (PID == "0xA04A")
+    device = "BlueSolar MPPT 100|30 rev2";
+  if (PID == "0xA04B")
+    device = "BlueSolar MPPT 150|35 rev2";
+  if (PID == "0xA04C")
+    device = "BlueSolar MPPT 75|10";
+  if (PID == "0xA04D")
+    device = "BlueSolar MPPT 150|45";
+  if (PID == "0xA04E")
+    device = "BlueSolar MPPT 150|60";
+  if (PID == "0xA04F")
+    device = "BlueSolar MPPT 150|85";
+  if (PID == "0xA050")
+    device = "SmartSolar MPPT 250|100";
+  if (PID == "0xA051")
+    device = "SmartSolar MPPT 150|100";
+  if (PID == "0xA052")
+    device = "SmartSolar MPPT 150|85";
+  if (PID == "0xA053")
+    device = "SmartSolar MPPT 75|15";
+  if (PID == "0xA054")
+    device = "SmartSolar MPPT 75|10";
+  if (PID == "0xA055")
+    device = "SmartSolar MPPT 100|15";
+  if (PID == "0xA056")
+    device = "SmartSolar MPPT 100|30";
+  if (PID == "0xA057")
+    device = "SmartSolar MPPT 100|50";
+  if (PID == "0xA058")
+    device = "SmartSolar MPPT 150|35";
+  if (PID == "0xA059")
+    device = "SmartSolar MPPT 150|100 rev2";
+  if (PID == "0xA05A")
+    device = "SmartSolar MPPT 150|85 rev2";
+  if (PID == "0xA05B")
+    device = "SmartSolar MPPT 250|70";
+  if (PID == "0xA05C")
+    device = "SmartSolar MPPT 250|85";
+  if (PID == "0xA05D")
+    device = "SmartSolar MPPT 250|60";
+  if (PID == "0xA05E")
+    device = "SmartSolar MPPT 250|45";
+  if (PID == "0xA05F")
+    device = "SmartSolar MPPT 100|20";
+  if (PID == "0xA060")
+    device = "SmartSolar MPPT 100|20 48V";
+  if (PID == "0xA061")
+    device = "SmartSolar MPPT 150|45";
+  if (PID == "0xA062")
+    device = "SmartSolar MPPT 150|60";
+  if (PID == "0xA063")
+    device = "SmartSolar MPPT 150|70";
+  if (PID == "0xA064")
+    device = "SmartSolar MPPT 250|85 rev2";
+  if (PID == "0xA065")
+    device = "SmartSolar MPPT 250|100 rev2";
+
+  return (device);
+}
