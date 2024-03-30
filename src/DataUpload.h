@@ -5,10 +5,10 @@
 #include <InfluxDbCloud.h>
 #include "defs.h"
 #include "LoggerMisc.h"
-#include "LoggerWebClient.h"
+//#include "LoggerWebClient.h"
 
 
 void uploadInfluxReadings();
-void uploadGetData();
+//void uploadGetData();
 
 #endif /*DataUpload_h*/

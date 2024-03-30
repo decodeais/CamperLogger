@@ -138,7 +138,7 @@ debugV("Wtemp : %f",Wtemp);
 
 if  (Wtemp > 1000.0)
 {
-  Wtemp = modf (Wtemp , &TempInt); // fractpart = modf (param , &intpart);
+  Wtemp = modff (Wtemp , &TempInt); // fractpart = modf (param , &intpart);
   debugV("Wtemp : %f",Wtemp);                                                                                                                      
 //AnaValue.Wturb += TempInt;
 debugV("TempInt : %f",TempInt);   

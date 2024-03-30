@@ -2,7 +2,7 @@
 #define defs_h
 #include <Arduino.h>
 
-#define VERSION 2.1
+//#define VERSION 2.1
 #define LOG_LEVEL_ERROR 1
 #define LOG_LEVEL_INFO 2
 #define LOG_LEVEL_DEBUG 3

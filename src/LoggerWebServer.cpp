@@ -8,7 +8,6 @@ extern bool MPPT_present;
 extern String lastBlockMPPT;
 extern bool Converter_present;
 extern String lastBlockConverter;
-extern SettingsStruct settings;
 extern readingsStruct readings;
 extern unsigned long timerAPoff;
 
@@ -432,7 +431,7 @@ void handle_savecfg() {
       if (Webserver.argName(i) == "idb_bucket") {
         Webserver.arg(i).toCharArray(Settings.influx_bucket, 20);
       }
-      if (Webserver.argName(i) == "get_host") {
+      /*XX if (Webserver.argName(i) == "get_host") {
         Webserver.arg(i).toCharArray(Settings.upload_get_host, 32);
       }
       if (Webserver.argName(i) == "idb_port") {
@@ -440,7 +439,7 @@ void handle_savecfg() {
       }
       if (Webserver.argName(i) == "get_port") {
         Settings.upload_get_port = Webserver.arg(i).toInt();
-      }
+      }*/
       /*if (Webserver.argName(i) == "gps_interval") {
         Settings.gps_upload_interval = Webserver.arg(i).toInt();
       }*/
@@ -550,14 +549,14 @@ void handle_cfgSpecial() {
   content += "<tr><td>Voltage Turbine RUN</td><td><input type=number step=0.01 name=uturbine_run value=" +     String(SpecialSettings.U_TurbineRUN)   + "></td></tr>";
 
  // content += "<tr><td colspan=2><button type=button onclick=this.style.background = 'green'></button><input type=submit value=Save settings></td></tr>";
-content += "\
+/*content += "\
 <tr><td colspan=\"2\">\
 <input type=\"submit\" value=\"Save settings\">\
 </td></tr>";
 //content +="<iframe src=\"/sensors\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
     content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=2\" width=\"900\" height=\"600\" frameborder=\"0\"></iframe>";
     content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=14\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
-
+*/
   content += "</table></form></html>";
   Webserver.send(200, "text/html", content);
   if (timerAPoff != 0)

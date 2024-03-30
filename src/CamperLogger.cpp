@@ -6,13 +6,12 @@
 // Partition scheme: Minimal SPIFFS (1.9MB APP with OTA)/190KB SPIFFS)
 // #include "GPS.h"
 #include "defs.h"
-
 #include "VEdirect.h"
 #include "BackgroundTasks.h"
 #include "LoggerMisc.h"
 #include "LoggerWiFi.h"
 #include "LoggerWebserver.h"
-#include "LoggerWebClient.h"
+//#include "LoggerWebClient.h"
 #include "DataUpload.h"
 #include "LoggerSPIFSS.h"
 //#include <exteeprom.h>
@@ -94,10 +93,10 @@ IPAddress apIP(192, 168, 4, 1);
 IPAddress apNM(255, 255, 255, 0);
 IPAddress apGW(0, 0, 0, 0);
 
-//unsigned long timerAPoff    = millis() + 10000L;
-unsigned long timerAPoff = 0;
+unsigned long timerAPoff    = millis() + 10000L;
+//nsigned long timerAPoff = 0;
 unsigned long timerLog = millis() + 60000L;  // first upload after 60 seconds.
-unsigned long timerGPS = millis() + 60000L;
+//unsigned long timerGPS = millis() + 60000L;
 unsigned long timerConnectionCheck = millis() + 60000L;
 unsigned long nextWifiRetry = millis() + WIFI_RECONNECT_INTERVAL * 1000;
 
@@ -119,9 +118,6 @@ WebServer Webserver(80);
 HardwareSerial Serial_VE_Converter(1);  // Converter connection
 HardwareSerial Serial_VE_MPPT(2);   // VE direct connections
 
-//void onRmcUpdate(nmea::RmcData const);
-//void onGgaUpdate(nmea::GgaData const);
-//TinyGPSPlus gpsParser;
 
 /**************************************************************************************
  * GLOBAL VARIABLES
@@ -171,8 +167,18 @@ void test_I2C() {
 
 void setup() {
 
+ Serial.begin(115200);
+ delay(1000);
 
 
+
+IPAddress local_IP(192,168,4,1);
+IPAddress gateway(0,0,0,0);
+IPAddress subnet(255,255,255,0);
+
+
+  Serial.begin(115200);
+  Serial.println();
 
   Wire.begin(I2C_SDA, I2C_SCL,10000);
   pinMode(PIN_STATUS_LED, OUTPUT);
@@ -199,7 +205,7 @@ void setup() {
 Init_Analog();
 
 
-  Serial.begin(115200);
+ 
  //Converter SerialGPS.begin(9600, SERIAL_7E1, GPS_PIN, -1, false);
 
  // addLog(LOG_LEVEL_INFO, "CORE : Version " + String(fileversion, 3) + " starting");
@@ -220,28 +226,37 @@ Init_Analog();
   //addLog(LOG_LEVEL_INFO, "CORE : DST setting: " + String(Settings.DST));
 
   WifiAPconfig();
+
   WifiConnect(3);
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("WIFI : WiFi connected, disabling AP in 10 seconds");
-    timerAPoff = millis() + 10000L;
+    timerAPoff = millis() + 60000L;
   }
   delay(100);
-  WebServerInit();
 
   
- /* http://remotedebugapp.pluggable.biz*/
-  MDNS.addService("telnet", "tcp", 23); // Telnet server of RemoteDebug, register as telnet
-  Debug.begin("HOST_NAME"); // Initialize the WiFi server
-  Debug.setResetCmdEnabled(true); // Enable the reset command
+    WebServerInit();
+    if (WiFi.status() == WL_CONNECTED) { 
+  /* http://remotedebugapp.pluggable.biz*/
+  /* if( MDNS.addService("telnet", "tcp", 23))
+   {
+  addLog(LOG_LEVEL_INFO, "Telnet : Service started");
+   } // Telnet server of RemoteDebug, register as telnet
+    */
+   if( Debug.begin("HOST_NAME"))
+   {
+      addLog(LOG_LEVEL_INFO, "RemoteDebug : Started");
+   }; // Initialize the WiFi server
+    Debug.setResetCmdEnabled(true); // Enable the reset command
+ 
+    Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
 
-	Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
-
-	Debug.showColors(true); // Colors
-  
+    Debug.showColors(true); // Colors
+  }
 debugI("Ready");
   debugI("IP address: %s",WiFi.localIP());
 
-  reportResetReason();  // report to the backend what caused the reset
+//  reportResetReason();  // report to the backend what caused the reset
  // callHome();           // get settings and current software version from server
   debugV( "CORE : Setup done. Starting main loop");
 
@@ -289,6 +304,7 @@ debugI("Ready");
       else if (error == OTA_END_ERROR)
         debugE("End Failed");
     });
+  debugE("starting OTA");
   ArduinoOTA.begin();
 
 
@@ -387,7 +403,7 @@ Debug.handle();
   if (WiFi.status() != WL_CONNECTED && timeOutReached(nextWifiRetry)) {
     Serial.println("WIFI : Not connected, trying to connect");
     WifiConnect(3);
-    nextWifiRetry = millis() + WIFI_RECONNECT_INTERVAL * 1000;
+    nextWifiRetry = millis() + WIFI_RECONNECT_INTERVAL * 10000;
   }
   delay(100);
   ArduinoOTA.handle();

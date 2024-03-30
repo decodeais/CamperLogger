@@ -130,18 +130,7 @@ void uploadGetData() {
       request += "&T" + String(i) + "=" + String(readings.temp[i]);
     }
   }
-/*
-  if (GPS_present) {
-    request += "&GPSdate=" + String(readings.GPS_date);
-    request += "&GPStime=" + String(readings.GPS_time);
-    request += "&GPSlat=" + String(readings.GPS_lat);
-    request += "&GPSlon=" + String(readings.GPS_lon);
-    request += "&GPSspeed=" + String(readings.GPS_speed);
-    request += "&GPSheading=" + String(readings.GPS_heading);
-    request += "&GPSfix=" + String(readings.GPS_fix);
-    request += "&GPS_geohash=" + String(readings.GPS_geohash);
-  }
-  */
+
  /*
   String response;
   if (Settings.upload_get_ssl) {
