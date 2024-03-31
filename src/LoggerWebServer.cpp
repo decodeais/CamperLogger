@@ -549,10 +549,11 @@ void handle_cfgSpecial() {
   content += "<tr><td>Voltage Turbine RUN</td><td><input type=number step=0.01 name=uturbine_run value=" +     String(SpecialSettings.U_TurbineRUN)   + "></td></tr>";
 
  // content += "<tr><td colspan=2><button type=button onclick=this.style.background = 'green'></button><input type=submit value=Save settings></td></tr>";
-/*content += "\
+content += "\
 <tr><td colspan=\"2\">\
 <input type=\"submit\" value=\"Save settings\">\
 </td></tr>";
+/*
 //content +="<iframe src=\"/sensors\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
     content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=2\" width=\"900\" height=\"600\" frameborder=\"0\"></iframe>";
     content +="<iframe src=\"http://193.122.4.196:3000/d-solo/MCp6Tq0Vk/solar?orgId=1&panelId=14\" width=\"900\" height=\"400\" frameborder=\"0\"></iframe>";
